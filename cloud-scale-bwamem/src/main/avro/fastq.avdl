@@ -1,0 +1,17 @@
+@namespace("cs.ucla.edu.avro.fastq")
+protocol FASTQ {
+
+record FASTQRecord {
+    bytes name;
+    bytes seq;
+    bytes quality;
+    int seqLength;
+    bytes comment = null;
+}
+
+record PairEndFASTQRecord {
+    FASTQRecord seq0;
+    FASTQRecord seq1;
+}
+
+}
