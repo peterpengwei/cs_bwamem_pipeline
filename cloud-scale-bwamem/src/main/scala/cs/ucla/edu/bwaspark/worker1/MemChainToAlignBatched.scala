@@ -45,6 +45,10 @@ import java.io.{FileReader, BufferedReader}
 // JNI function for SWExtend
 import cs.ucla.edu.bwaspark.jni.SWExtendFPGAJNI
 
+import edu.ucla.cs.cdsc.benchmarks.SWPipeline
+import edu.ucla.cs.cdsc.benchmarks.SWSendObject
+import edu.ucla.cs.cdsc.pipeline.Pipeline
+
 
 object MemChainToAlignBatched {
   val MAX_BAND_TRY = 2
@@ -57,7 +61,7 @@ object MemChainToAlignBatched {
 
   def pipelinePack(taskNum: Int, //number of tasks
                    tasks: Array[ExtParam]
-                  ): Array[Byte] {
+                  ): SWSendObject = {
     def int2ByteArray(arr: Array[Byte], idx: Int, num: Int): Int = {
       arr(idx) = (num & 0xff).toByte
       arr(idx + 1) = ((num >> 8) & 0xff).toByte
@@ -170,14 +174,15 @@ object MemChainToAlignBatched {
 
     val dataBuffer = Array.concat(buf1, buf2)
 
-    dataBuffer
+    new SWSendObject(dataBuffer)
+
   }
 
   def pipelineUnpack(taskNum: Int,
                      bufRet: Array[Short],
                      results: Array[ExtRet]
                     ) {
-    i = 0
+    var i = 0
     while (i < taskNum) {
       if (results(i) == null) results(i) = new ExtRet
       results(i).idx = ((bufRet(1 + FPGA_RET_PARAM_NUM * 2 * i).toInt) << 16) | bufRet(0 + FPGA_RET_PARAM_NUM * 2 * i).toInt
@@ -190,6 +195,29 @@ object MemChainToAlignBatched {
       results(i).width = bufRet(8 + FPGA_RET_PARAM_NUM * 2 * i)
       i = i + 1
     }
+  }
+
+  def runOnFPGAPipeline(taskNum: Int,
+                        tasks: Array[ExtParam],
+                        results: Array[ExtRet],
+                        pipeline: SWPipeline,
+                        threadID: Int
+                       ): Unit = {
+    val unpackObj = pipeline.getUnpackObjects().get(threadID)
+
+    val inputData = pipelinePack(taskNum, tasks)
+    val sendQueue = SWPipeline.getSendQueue()
+
+    while (sendQueue.offer(inputData) == false) ;
+
+    val outputData = null
+    var flag = true
+    while (true) {
+      outputData = unpackObj.getData.getAndSet(null)
+      if (outputData != null) flag = false
+    }
+
+    pipelineUnpack(taskNum, outputData, results)
   }
 
   //Run DPs on FPGA
@@ -605,6 +633,10 @@ object MemChainToAlignBatched {
     var fpgaExtTasks = new Array[ExtParam](numOfReads)
     var fpgaExtResults = new Array[ExtRet](numOfReads)
     var taskIdx = 0
+
+    val pipeline = SWPipeline.getSingleton()
+    val threadID = pipeline.acquireThreadID()
+    pipeline.execute(null)
 
     while (!isFinished) {
 

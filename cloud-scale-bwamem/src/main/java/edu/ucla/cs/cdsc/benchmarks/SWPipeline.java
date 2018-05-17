@@ -37,6 +37,16 @@ public class SWPipeline extends Pipeline {
     private AtomicInteger numPendingJobs;
     private int numFPGAJobs;
 
+    public static SWPipeline getSingleton() {
+        return singleton;
+    }
+
+    private static SWPipeline singleton;
+
+    static {
+        singleton = new SWPipeline(1 << 20);
+    }
+
     public SWPipeline(int TILE_SIZE) {
         numPendingJobs = new AtomicInteger(0);
         numFPGAJobs = 0;
@@ -181,6 +191,9 @@ public class SWPipeline extends Pipeline {
         //Thread mergeThread = new Thread(merger);
         //mergeThread.start();
 
+        return null;
+
+        /*
         try {
             sendThread.join();
             recvThread.join();
@@ -197,6 +210,8 @@ public class SWPipeline extends Pipeline {
         //return stringBuilder.toString();
         System.out.println();
         return null;
+        */
+
     }
 
     public int getTILE_SIZE() {
