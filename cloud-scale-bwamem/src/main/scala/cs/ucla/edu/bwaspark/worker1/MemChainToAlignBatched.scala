@@ -37,7 +37,7 @@ import java.net.Socket
 import java.net.InetAddress
 import java.net.ServerSocket
 
-import sun.plugin2.message.Pipe
+// import sun.plugin2.message.Pipe
 
 // Used for read test input data
 import java.io.{FileReader, BufferedReader}
@@ -206,11 +206,12 @@ object MemChainToAlignBatched {
     val unpackObj = pipeline.getUnpackObjects().get(threadID)
 
     val inputData = pipelinePack(taskNum, tasks)
-    val sendQueue = SWPipeline.getSendQueue()
+    val sendQueue = Pipeline.getSendQueue()
 
-    while (sendQueue.offer(inputData) == false) ;
+    while (sendQueue.offer(inputData) == false) {
+    }
 
-    val outputData = null
+    var outputData = null
     var flag = true
     while (true) {
       outputData = unpackObj.getData.getAndSet(null)
