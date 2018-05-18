@@ -36,6 +36,7 @@ import java.nio.ByteOrder
 import java.net.Socket
 import java.net.InetAddress
 import java.net.ServerSocket
+import java.util
 
 // import sun.plugin2.message.Pipe
 
@@ -48,6 +49,7 @@ import cs.ucla.edu.bwaspark.jni.SWExtendFPGAJNI
 import edu.ucla.cs.cdsc.benchmarks.SWPipeline
 import edu.ucla.cs.cdsc.benchmarks.SWSendObject
 import edu.ucla.cs.cdsc.pipeline.Pipeline
+import java.util.concurrent.atomic.AtomicReference
 
 
 object MemChainToAlignBatched {
@@ -203,7 +205,7 @@ object MemChainToAlignBatched {
                         pipeline: SWPipeline,
                         threadID: Int
                        ): Unit = {
-    val unpackObj = pipeline.getUnpackObjects().get(threadID)
+    val unpackObj: AtomicReference[Array[Byte]] = pipeline.getUnpackObjects().get(threadID).getData
 
     val inputData = pipelinePack(taskNum, tasks)
     val sendQueue = Pipeline.getSendQueue()
@@ -211,13 +213,15 @@ object MemChainToAlignBatched {
     while (sendQueue.offer(inputData) == false) {
     }
 
-    var outputData = null
     var flag = true
-    while (true) {
-      outputData = unpackObj.getData.getAndSet(null)
-      if (outputData != null) flag = false
+    var outputData = _
+    while (flag) {
+      var curData = unpackObj.getAndSet(null)
+      if (curData != null) {
+        outputData = curData
+        flag = false
+      }
     }
-
     pipelineUnpack(taskNum, outputData, results)
   }
 
