@@ -181,20 +181,30 @@ object MemChainToAlignBatched {
   }
 
   def pipelineUnpack(taskNum: Int,
-                     bufRet: Array[Short],
+                     bufRet: Array[Byte],
                      results: Array[ExtRet]
                     ) {
     var i = 0
     while (i < taskNum) {
       if (results(i) == null) results(i) = new ExtRet
-      results(i).idx = ((bufRet(1 + FPGA_RET_PARAM_NUM * 2 * i).toInt) << 16) | bufRet(0 + FPGA_RET_PARAM_NUM * 2 * i).toInt
-      results(i).qBeg = bufRet(2 + FPGA_RET_PARAM_NUM * 2 * i)
-      results(i).qEnd = bufRet(3 + FPGA_RET_PARAM_NUM * 2 * i)
-      results(i).rBeg = bufRet(4 + FPGA_RET_PARAM_NUM * 2 * i)
-      results(i).rEnd = bufRet(5 + FPGA_RET_PARAM_NUM * 2 * i)
-      results(i).score = bufRet(6 + FPGA_RET_PARAM_NUM * 2 * i)
-      results(i).trueScore = bufRet(7 + FPGA_RET_PARAM_NUM * 2 * i)
-      results(i).width = bufRet(8 + FPGA_RET_PARAM_NUM * 2 * i)
+      results(i).idx = ((bufRet(3 + FPGA_RET_PARAM_NUM * 4 * i).toInt) << 24) |
+        ((bufRet(2 + FPGA_RET_PARAM_NUM * 4 * i).toInt) << 16) |
+        ((bufRet(1 + FPGA_RET_PARAM_NUM * 4 * i).toInt) << 8) |
+        (bufRet(0 + FPGA_RET_PARAM_NUM * 4 * i).toInt)
+      results(i).qBeg = (bufRet(5 + FPGA_RET_PARAM_NUM * 4 * i).toShort) |
+        (bufRet(4 + FPGA_RET_PARAM_NUM * 4 * i).toShort)
+      results(i).qEnd = (bufRet(7 + FPGA_RET_PARAM_NUM * 4 * i).toShort) |
+        (bufRet(6 + FPGA_RET_PARAM_NUM * 4 * i).toShort)
+      results(i).rBeg = (bufRet(9 + FPGA_RET_PARAM_NUM * 4 * i).toShort) |
+        (bufRet(8 + FPGA_RET_PARAM_NUM * 4 * i).toShort)
+      results(i).rEnd = (bufRet(11 + FPGA_RET_PARAM_NUM * 4 * i).toShort) |
+        (bufRet(10 + FPGA_RET_PARAM_NUM * 4 * i).toShort)
+      results(i).score = (bufRet(13 + FPGA_RET_PARAM_NUM * 4 * i).toShort) |
+        (bufRet(12 + FPGA_RET_PARAM_NUM * 4 * i).toShort)
+      results(i).trueScore = (bufRet(15 + FPGA_RET_PARAM_NUM * 4 * i).toShort) |
+        (bufRet(14 + FPGA_RET_PARAM_NUM * 4 * i).toShort)
+      results(i).width = (bufRet(17 + FPGA_RET_PARAM_NUM * 4 * i).toShort) |
+        (bufRet(16 + FPGA_RET_PARAM_NUM * 4 * i).toShort)
       i = i + 1
     }
   }
@@ -218,7 +228,7 @@ object MemChainToAlignBatched {
       var curData = unpackObj.getAndSet(null)
       if (curData != null) {
         flag = false
-	pipelineUnpack(taskNum, curData, results)
+        pipelineUnpack(taskNum, curData, results)
       }
     }
     //pipelineUnpack(taskNum, outputData, results)
