@@ -191,19 +191,19 @@ object MemChainToAlignBatched {
         ((bufRet(2 + FPGA_RET_PARAM_NUM * 4 * i).toInt) << 16) |
         ((bufRet(1 + FPGA_RET_PARAM_NUM * 4 * i).toInt) << 8) |
         (bufRet(0 + FPGA_RET_PARAM_NUM * 4 * i).toInt)
-      results(i).qBeg = (bufRet(5 + FPGA_RET_PARAM_NUM * 4 * i).toShort) |
+      results(i).qBeg = ((bufRet(5 + FPGA_RET_PARAM_NUM * 4 * i).toShort) << 8) |
         (bufRet(4 + FPGA_RET_PARAM_NUM * 4 * i).toShort)
-      results(i).qEnd = (bufRet(7 + FPGA_RET_PARAM_NUM * 4 * i).toShort) |
+      results(i).qEnd = ((bufRet(7 + FPGA_RET_PARAM_NUM * 4 * i).toShort) << 8) |
         (bufRet(6 + FPGA_RET_PARAM_NUM * 4 * i).toShort)
-      results(i).rBeg = (bufRet(9 + FPGA_RET_PARAM_NUM * 4 * i).toShort) |
+      results(i).rBeg = ((bufRet(9 + FPGA_RET_PARAM_NUM * 4 * i).toShort) << 8) |
         (bufRet(8 + FPGA_RET_PARAM_NUM * 4 * i).toShort)
-      results(i).rEnd = (bufRet(11 + FPGA_RET_PARAM_NUM * 4 * i).toShort) |
+      results(i).rEnd = ((bufRet(11 + FPGA_RET_PARAM_NUM * 4 * i).toShort) << 8) |
         (bufRet(10 + FPGA_RET_PARAM_NUM * 4 * i).toShort)
-      results(i).score = (bufRet(13 + FPGA_RET_PARAM_NUM * 4 * i).toShort) |
+      results(i).score = ((bufRet(13 + FPGA_RET_PARAM_NUM * 4 * i).toShort) << 8) |
         (bufRet(12 + FPGA_RET_PARAM_NUM * 4 * i).toShort)
-      results(i).trueScore = (bufRet(15 + FPGA_RET_PARAM_NUM * 4 * i).toShort) |
+      results(i).trueScore = ((bufRet(15 + FPGA_RET_PARAM_NUM * 4 * i).toShort) << 8) |
         (bufRet(14 + FPGA_RET_PARAM_NUM * 4 * i).toShort)
-      results(i).width = (bufRet(17 + FPGA_RET_PARAM_NUM * 4 * i).toShort) |
+      results(i).width = ((bufRet(17 + FPGA_RET_PARAM_NUM * 4 * i).toShort) << 8) |
         (bufRet(16 + FPGA_RET_PARAM_NUM * 4 * i).toShort)
       i = i + 1
     }
