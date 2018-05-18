@@ -214,15 +214,14 @@ object MemChainToAlignBatched {
     }
 
     var flag = true
-    var outputData = _
     while (flag) {
       var curData = unpackObj.getAndSet(null)
       if (curData != null) {
-        outputData = curData
         flag = false
+	pipelineUnpack(taskNum, curData, results)
       }
     }
-    pipelineUnpack(taskNum, outputData, results)
+    //pipelineUnpack(taskNum, outputData, results)
   }
 
   //Run DPs on FPGA
