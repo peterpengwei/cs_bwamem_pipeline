@@ -46,7 +46,7 @@ import java.io.{FileReader, BufferedReader}
 // JNI function for SWExtend
 import cs.ucla.edu.bwaspark.jni.SWExtendFPGAJNI
 
-import edu.ucla.cs.cdsc.benchmarks.SWPipeline
+import edu.ucla.cs.cdsc.benchmarks.SWPipeline._
 import edu.ucla.cs.cdsc.benchmarks.SWSendObject
 import edu.ucla.cs.cdsc.pipeline.Pipeline
 import java.util.concurrent.atomic.AtomicReference
