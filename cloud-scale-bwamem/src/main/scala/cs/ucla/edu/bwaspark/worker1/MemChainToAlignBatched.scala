@@ -755,7 +755,8 @@ object MemChainToAlignBatched {
       if (useFPGA == true) {
         if (taskIdx >= threshold) {
           //val ret = runOnFPGA(taskIdx, numOfReads, fpgaExtTasks, fpgaExtResults)
-          val ret = runOnFPGAJNI(taskIdx, fpgaExtTasks, fpgaExtResults)
+          //val ret = runOnFPGAJNI(taskIdx, fpgaExtTasks, fpgaExtResults)
+          val ret = runOnFPGAPipeline(taskIdx, fpgaExtTasks, fpgaExtResults, pipeline, threadID)
         }
         else {
           i = 0;
