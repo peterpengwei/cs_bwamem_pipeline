@@ -75,6 +75,7 @@ public class SWPipeline extends Pipeline {
             //logger.info("Sending data with length " + data.length + ": " + (new String(data)).substring(0, 64));
             //BufferedOutputStream out = new BufferedOutputStream(socket.getOutputStream());
             //out.write(data, 0, TILE_SIZE);
+            socket.getOutputStream().write(data.length);
             socket.getOutputStream().write(data);
             socket.close();
         } catch (Exception e) {
