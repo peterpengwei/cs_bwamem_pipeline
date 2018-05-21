@@ -122,6 +122,7 @@ public class SWPipeline extends Pipeline {
 
     @Override
     public Object execute(Object input) {
+        logger.info("[Pipeline] pipeline initialization begins");
         long overallStartTime = System.nanoTime();
 
         Runnable sender = () -> {
@@ -130,6 +131,7 @@ public class SWPipeline extends Pipeline {
                 while (!done) {
                     SWSendObject obj;
                     while ((obj = (SWSendObject) SWPipeline.getSendQueue().poll()) == null) ;
+                    logger.info("[Pipeline] obtained a valid input from the send queue");
                     if (obj.getData() == null) {
                         //done = true;
                     } else {

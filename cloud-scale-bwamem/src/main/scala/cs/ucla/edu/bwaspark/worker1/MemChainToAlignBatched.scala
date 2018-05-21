@@ -187,24 +187,24 @@ object MemChainToAlignBatched {
     var i = 0
     while (i < taskNum) {
       if (results(i) == null) results(i) = new ExtRet
-      results(i).idx = ((bufRet(3 + FPGA_RET_PARAM_NUM * 4 * i).toInt) << 24) |
-        ((bufRet(2 + FPGA_RET_PARAM_NUM * 4 * i).toInt) << 16) |
-        ((bufRet(1 + FPGA_RET_PARAM_NUM * 4 * i).toInt) << 8) |
-        (bufRet(0 + FPGA_RET_PARAM_NUM * 4 * i).toInt)
-      results(i).qBeg = ((bufRet(5 + FPGA_RET_PARAM_NUM * 4 * i).toShort) << 8) |
-        (bufRet(4 + FPGA_RET_PARAM_NUM * 4 * i).toShort)
-      results(i).qEnd = ((bufRet(7 + FPGA_RET_PARAM_NUM * 4 * i).toShort) << 8) |
-        (bufRet(6 + FPGA_RET_PARAM_NUM * 4 * i).toShort)
-      results(i).rBeg = ((bufRet(9 + FPGA_RET_PARAM_NUM * 4 * i).toShort) << 8) |
-        (bufRet(8 + FPGA_RET_PARAM_NUM * 4 * i).toShort)
-      results(i).rEnd = ((bufRet(11 + FPGA_RET_PARAM_NUM * 4 * i).toShort) << 8) |
-        (bufRet(10 + FPGA_RET_PARAM_NUM * 4 * i).toShort)
-      results(i).score = ((bufRet(13 + FPGA_RET_PARAM_NUM * 4 * i).toShort) << 8) |
-        (bufRet(12 + FPGA_RET_PARAM_NUM * 4 * i).toShort)
-      results(i).trueScore = ((bufRet(15 + FPGA_RET_PARAM_NUM * 4 * i).toShort) << 8) |
-        (bufRet(14 + FPGA_RET_PARAM_NUM * 4 * i).toShort)
-      results(i).width = ((bufRet(17 + FPGA_RET_PARAM_NUM * 4 * i).toShort) << 8) |
-        (bufRet(16 + FPGA_RET_PARAM_NUM * 4 * i).toShort)
+      results(i).idx = bufRet(3 + FPGA_RET_PARAM_NUM * 4 * i).toInt << 24 |
+        bufRet(2 + FPGA_RET_PARAM_NUM * 4 * i).toInt << 16 |
+        bufRet(1 + FPGA_RET_PARAM_NUM * 4 * i).toInt << 8 |
+        bufRet(0 + FPGA_RET_PARAM_NUM * 4 * i).toInt
+      results(i).qBeg = bufRet(5 + FPGA_RET_PARAM_NUM * 4 * i).toShort << 8 |
+        bufRet(4 + FPGA_RET_PARAM_NUM * 4 * i).toShort
+      results(i).qEnd = bufRet(7 + FPGA_RET_PARAM_NUM * 4 * i).toShort << 8 |
+        bufRet(6 + FPGA_RET_PARAM_NUM * 4 * i).toShort
+      results(i).rBeg = bufRet(9 + FPGA_RET_PARAM_NUM * 4 * i).toShort << 8 |
+        bufRet(8 + FPGA_RET_PARAM_NUM * 4 * i).toShort
+      results(i).rEnd = bufRet(11 + FPGA_RET_PARAM_NUM * 4 * i).toShort << 8 |
+        bufRet(10 + FPGA_RET_PARAM_NUM * 4 * i).toShort
+      results(i).score = bufRet(13 + FPGA_RET_PARAM_NUM * 4 * i).toShort << 8 |
+        bufRet(12 + FPGA_RET_PARAM_NUM * 4 * i).toShort
+      results(i).trueScore = bufRet(15 + FPGA_RET_PARAM_NUM * 4 * i).toShort << 8 |
+        bufRet(14 + FPGA_RET_PARAM_NUM * 4 * i).toShort
+      results(i).width = bufRet(17 + FPGA_RET_PARAM_NUM * 4 * i).toShort << 8 |
+        bufRet(16 + FPGA_RET_PARAM_NUM * 4 * i).toShort
       i = i + 1
     }
   }
@@ -215,6 +215,7 @@ object MemChainToAlignBatched {
                         pipeline: SWPipeline,
                         threadID: Int
                        ): Unit = {
+    System.out.println("[Pipeline] start smith-waterman job processing:")
     val unpackObj: AtomicReference[Array[Byte]] = pipeline.getUnpackObjects().get(threadID).getData
 
     val inputData = pipelinePack(taskNum, tasks)
@@ -223,10 +224,13 @@ object MemChainToAlignBatched {
     while (sendQueue.offer(inputData) == false) {
     }
 
+    System.out.println("[Pipeline] a batch is sent to the pipeline")
+
     var flag = true
     while (flag) {
       var curData = unpackObj.getAndSet(null)
       if (curData != null) {
+        System.out.println("[Pipeline] obtained a valid batch of results")
         flag = false
         pipelineUnpack(taskNum, curData, results)
       }
