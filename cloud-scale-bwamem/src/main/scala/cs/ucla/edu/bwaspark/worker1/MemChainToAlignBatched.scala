@@ -185,27 +185,28 @@ object MemChainToAlignBatched {
                      bufRet: Array[Byte],
                      results: Array[ExtRet]
                     ) {
+    def bytesToInt(buffer: Array[Byte], idx: Int): Int = {
+      val byteBuffer: ByteBuffer = ByteBuffer.wrap(buffer, idx, 4)
+      byteBuffer.order(ByteOrder.LITTLE_ENDIAN)
+      return byteBuffer.getInt()
+    }
+    def bytesToShort(buffer: Array[Byte], idx: Int): Short = {
+      val byteBuffer: ByteBuffer = ByteBuffer.wrap(buffer, idx, 2)
+      byteBuffer.order(ByteOrder.LITTLE_ENDIAN)
+      return byteBuffer.getShort()
+    }
     var i = 0
     while (i < taskNum) {
       if (results(i) == null) results(i) = new ExtRet
-      results(i).idx = bufRet(3 + FPGA_RET_PARAM_NUM * 4 * i).toInt << 24 |
-        bufRet(2 + FPGA_RET_PARAM_NUM * 4 * i).toInt << 16 |
-        bufRet(1 + FPGA_RET_PARAM_NUM * 4 * i).toInt << 8 |
-        bufRet(0 + FPGA_RET_PARAM_NUM * 4 * i).toInt
-      results(i).qBeg = bufRet(5 + FPGA_RET_PARAM_NUM * 4 * i).toShort << 8 |
-        bufRet(4 + FPGA_RET_PARAM_NUM * 4 * i).toShort
-      results(i).qEnd = bufRet(7 + FPGA_RET_PARAM_NUM * 4 * i).toShort << 8 |
-        bufRet(6 + FPGA_RET_PARAM_NUM * 4 * i).toShort
-      results(i).rBeg = bufRet(9 + FPGA_RET_PARAM_NUM * 4 * i).toShort << 8 |
-        bufRet(8 + FPGA_RET_PARAM_NUM * 4 * i).toShort
-      results(i).rEnd = bufRet(11 + FPGA_RET_PARAM_NUM * 4 * i).toShort << 8 |
-        bufRet(10 + FPGA_RET_PARAM_NUM * 4 * i).toShort
-      results(i).score = bufRet(13 + FPGA_RET_PARAM_NUM * 4 * i).toShort << 8 |
-        bufRet(12 + FPGA_RET_PARAM_NUM * 4 * i).toShort
-      results(i).trueScore = bufRet(15 + FPGA_RET_PARAM_NUM * 4 * i).toShort << 8 |
-        bufRet(14 + FPGA_RET_PARAM_NUM * 4 * i).toShort
-      results(i).width = bufRet(17 + FPGA_RET_PARAM_NUM * 4 * i).toShort << 8 |
-        bufRet(16 + FPGA_RET_PARAM_NUM * 4 * i).toShort
+      results(i).idx = bytesToInt(bufRet, 0 + FPGA_RET_PARAM_NUM * 4 * i)
+      results(i).qBeg = bytesToShort(bufRet, 4 + FPGA_RET_PARAM_NUM * 4 * i)
+      results(i).qEnd = bytesToShort(bufRet, 6 + FPGA_RET_PARAM_NUM * 4 * i)
+      results(i).rBeg = bytesToShort(bufRet, 8 + FPGA_RET_PARAM_NUM * 4 * i)
+      results(i).rEnd = bytesToShort(bufRet, 10 + FPGA_RET_PARAM_NUM * 4 * i)
+      results(i).score = bytesToShort(bufRet, 12 + FPGA_RET_PARAM_NUM * 4 * i)
+      results(i).trueScore = bytesToShort(bufRet, 14 + FPGA_RET_PARAM_NUM * 4 * i)
+      results(i).width = bytesToShort(bufRet, 16 + FPGA_RET_PARAM_NUM * 4 * i)
+      println("[Pipeline] unpack index verification: " + results(i).idx)
       i = i + 1
     }
   }
