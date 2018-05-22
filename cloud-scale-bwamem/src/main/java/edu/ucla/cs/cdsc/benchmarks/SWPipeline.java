@@ -177,7 +177,7 @@ public final class SWPipeline extends Pipeline {
                     while ((curObj = (SWRecvObject) getRecvQueue().poll()) == null) ;
                     if (curObj.getData() == null) done = true;
                     else {
-                        int curThreadID = curObj.getData()[3];
+                        int curThreadID = ((int) curObj.getData()[3]) & 0xff;
                         logger.info("[Pipeline] Received results belong to Thread " + curThreadID);
                         logger.info("[Pipeline] Hash table size = " + unpackObjects.size());
                         AtomicReference<byte[]> curReference = unpackObjects.get(curThreadID).getData();
