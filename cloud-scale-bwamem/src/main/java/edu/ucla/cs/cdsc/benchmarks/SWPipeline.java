@@ -49,6 +49,7 @@ public class SWPipeline extends Pipeline {
 
     public SWPipeline(int TILE_SIZE) {
         numPendingJobs = new AtomicInteger(0);
+	numPackThreads = new AtomicInteger(0);
         numFPGAJobs = 0;
         this.TILE_SIZE = TILE_SIZE;
     }

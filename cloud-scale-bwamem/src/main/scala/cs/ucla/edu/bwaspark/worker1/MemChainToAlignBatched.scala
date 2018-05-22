@@ -46,6 +46,7 @@ import java.io.{FileReader, BufferedReader}
 // JNI function for SWExtend
 import cs.ucla.edu.bwaspark.jni.SWExtendFPGAJNI
 
+import edu.ucla.cs.cdsc.benchmarks.SWPipeline
 import edu.ucla.cs.cdsc.benchmarks.SWPipeline._
 import edu.ucla.cs.cdsc.benchmarks.SWSendObject
 import edu.ucla.cs.cdsc.pipeline.Pipeline
@@ -653,6 +654,8 @@ object MemChainToAlignBatched {
     var taskIdx = 0
 
     val pipeline = SWPipeline.getSingleton()
+    if (pipeline == null)
+      System.out.println("pipeline singleton refers to a null pointer")
     val threadID = pipeline.acquireThreadID()
     pipeline.execute(null)
 
