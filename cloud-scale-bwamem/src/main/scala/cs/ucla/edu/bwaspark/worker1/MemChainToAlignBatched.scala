@@ -661,7 +661,8 @@ object MemChainToAlignBatched {
     val pipeline = SWPipeline.getSingleton
     if (pipeline == null)
       println("pipeline singleton refers to a null pointer")
-    val threadID: Int = pipeline.acquireThreadID()
+    var threadID: Int = pipeline.acquireThreadID()
+    println("[Pipeline] acquired Thread ID = " + threadID)
 
     while (!isFinished) {
 
@@ -813,6 +814,7 @@ object MemChainToAlignBatched {
     }
 
     pipeline.releaseThreadID(threadID)
+    println("Thread ID " + threadID + " is expired")
   }
 
   /**

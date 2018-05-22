@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
 
 /**
@@ -175,7 +176,8 @@ public final class SWPipeline extends Pipeline {
                     else {
                         int curThreadID = curObj.getData()[3];
                         logger.info("[Pipeline] Received results belong to Thread " + curThreadID);
-                        while (unpackObjects.get(curThreadID).getData().compareAndSet(null, curObj.getData())) ;
+                        AtomicReference<byte[]> curReference = unpackObjects.get(curThreadID).getData();
+                        while (curReference.compareAndSet(null, curObj.getData())) ;
                     }
                 }
             } catch (Exception e) {
