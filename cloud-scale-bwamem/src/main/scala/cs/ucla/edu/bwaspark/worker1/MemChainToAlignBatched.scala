@@ -200,6 +200,7 @@ object MemChainToAlignBatched {
     while (i < taskNum) {
       if (results(i) == null) results(i) = new ExtRet
       results(i).idx = bytesToInt(bufRet, 0 + FPGA_RET_PARAM_NUM * 4 * i)
+      results(i).idx = results(i).idx & 0xffffff
       results(i).qBeg = bytesToShort(bufRet, 4 + FPGA_RET_PARAM_NUM * 4 * i)
       results(i).qEnd = bytesToShort(bufRet, 6 + FPGA_RET_PARAM_NUM * 4 * i)
       results(i).rBeg = bytesToShort(bufRet, 8 + FPGA_RET_PARAM_NUM * 4 * i)
