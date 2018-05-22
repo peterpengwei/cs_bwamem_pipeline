@@ -14,44 +14,29 @@ import java.util.logging.Logger;
 /**
  * Created by Peter on 10/10/2017.
  */
-public class SWPipeline extends Pipeline {
+public final class SWPipeline extends Pipeline {
     private static final Logger logger = Logger.getLogger(SWPipeline.class.getName());
-
-    public static void setNumPackThreads(AtomicInteger numPackThreads) {
-        SWPipeline.numPackThreads = numPackThreads;
-    }
-
-    public ArrayList<SWUnpackObject> getUnpackObjects() {
-        return unpackObjects;
-    }
-
-    public void setUnpackObjects(ArrayList<SWUnpackObject> unpackObjects) {
-        this.unpackObjects = unpackObjects;
-    }
-
-    private static AtomicInteger numPackThreads;
+    private static final SWPipeline singleton = new SWPipeline(1 << 22);
+    private AtomicInteger numPackThreads;
     private int TILE_SIZE;
 
     private ArrayList<SWUnpackObject> unpackObjects;
 
     private AtomicInteger numPendingJobs;
-    private int numFPGAJobs;
+
+    public SWPipeline(int TILE_SIZE) {
+        this.numPendingJobs = new AtomicInteger(0);
+        this.numPackThreads = new AtomicInteger(0);
+        this.TILE_SIZE = TILE_SIZE;
+        this.unpackObjects = new ArrayList<>();
+    }
 
     public static SWPipeline getSingleton() {
         return singleton;
     }
 
-    private static SWPipeline singleton;
-
-    static {
-        singleton = new SWPipeline(1 << 20);
-    }
-
-    public SWPipeline(int TILE_SIZE) {
-        numPendingJobs = new AtomicInteger(0);
-	numPackThreads = new AtomicInteger(0);
-        numFPGAJobs = 0;
-        this.TILE_SIZE = TILE_SIZE;
+    public ArrayList<SWUnpackObject> getUnpackObjects() {
+        return unpackObjects;
     }
 
     @Override
@@ -136,7 +121,6 @@ public class SWPipeline extends Pipeline {
                     if (obj.getData() == null) {
                         //done = true;
                     } else {
-                        numFPGAJobs++;
                         send(obj);
                     }
                 }
