@@ -659,7 +659,7 @@ object MemChainToAlignBatched {
     var fpgaExtResults = new Array[ExtRet](numOfReads)
     var taskIdx = 0
 
-    val pipeline = edu.ucla.cs.cdsc.benchmarks.SWPipeline.singleton
+    val pipeline = SWPipeline.getSingleton
     if (pipeline == null)
       println("pipeline singleton refers to a null pointer")
     val threadID: Int = pipeline.acquireThreadID()

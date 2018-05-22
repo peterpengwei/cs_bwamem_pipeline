@@ -19,9 +19,11 @@
 package cs.ucla.edu.bwaspark.worker1
 
 import cs.ucla.edu.bwaspark.datatype._
+
 import scala.collection.mutable.MutableList
 import java.util.TreeSet
 import java.util.Comparator
+
 import cs.ucla.edu.bwaspark.worker1.MemChain._
 import cs.ucla.edu.bwaspark.worker1.MemChainFilter._
 import cs.ucla.edu.bwaspark.worker1.MemChainToAlignBatched._
@@ -29,11 +31,18 @@ import cs.ucla.edu.bwaspark.worker1.MemSortAndDedup._
 import cs.ucla.edu.bwaspark.util.LocusEncode._
 import cs.ucla.edu.avro.fastq._
 import cs.ucla.edu.bwaspark.debug.DebugFlag._
+import edu.ucla.cs.cdsc.benchmarks.SWPipeline
 
 //this standalone object defines the main job of BWA MEM:
 //1)for each read, generate all the possible seed chains
 //2)using SW algorithm to extend each chain to all possible aligns
 object BWAMemWorker1Batched {
+
+  val pipeline = SWPipeline.getSingleton()
+  if (pipeline.getIsRunning().getAndSet(true) == false) {
+    pipeline.execute(null)
+    println("[Pipeline] the only time when the pipeline is initialized")
+  }
   
   /**
     *  Perform BWAMEM worker1 function for single-end alignment

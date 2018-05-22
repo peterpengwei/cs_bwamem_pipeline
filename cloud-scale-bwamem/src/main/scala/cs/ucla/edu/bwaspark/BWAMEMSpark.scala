@@ -34,8 +34,6 @@ import cs.ucla.edu.bwaspark.FastMap.memMain
 import cs.ucla.edu.bwaspark.FastMapProfile.memMainProfile
 import cs.ucla.edu.bwaspark.commandline._
 import cs.ucla.edu.bwaspark.dnaseq._
-import edu.ucla.cs.cdsc.benchmarks.SWPipeline
-import edu.ucla.cs.cdsc.benchmarks.SWPipeline._
 import org.bdgenomics.adam.rdd.ADAMContext._
 
 
@@ -299,9 +297,6 @@ object BWAMEMSpark {
       val conf = new SparkConf()
       //val conf = new SparkConf().setAppName("Cloud-Scale BWAMEM: cs-bwamem")
       val sc = new SparkContext(conf)
-
-      val pipeline = edu.ucla.cs.cdsc.benchmarks.SWPipeline.singleton
-      pipeline.execute(null)
       
       memMain(sc, bwamemArgs) 
       println("CS-BWAMEM Finished!!!")
