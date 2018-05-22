@@ -176,6 +176,7 @@ public final class SWPipeline extends Pipeline {
                     else {
                         int curThreadID = curObj.getData()[3];
                         logger.info("[Pipeline] Received results belong to Thread " + curThreadID);
+                        logger.info("[Pipeline] Hash table size = " + unpackObjects.size());
                         AtomicReference<byte[]> curReference = unpackObjects.get(curThreadID).getData();
                         while (curReference.compareAndSet(null, curObj.getData())) ;
                     }
