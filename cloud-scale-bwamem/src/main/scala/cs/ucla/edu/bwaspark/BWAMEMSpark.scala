@@ -300,7 +300,7 @@ object BWAMEMSpark {
       //val conf = new SparkConf().setAppName("Cloud-Scale BWAMEM: cs-bwamem")
       val sc = new SparkContext(conf)
 
-      val pipeline = SWPipeline.getSingleton()
+      val pipeline = edu.ucla.cs.cdsc.benchmarks.SWPipeline.singleton
       pipeline.execute(null)
       
       memMain(sc, bwamemArgs) 
