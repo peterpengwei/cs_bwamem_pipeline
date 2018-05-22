@@ -8,6 +8,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
@@ -20,20 +21,20 @@ public final class SWPipeline extends Pipeline {
     private AtomicInteger numPackThreads;
     private int TILE_SIZE;
 
-    private ArrayList<SWUnpackObject> unpackObjects;
+    public HashMap<Integer, SWUnpackObject> getUnpackObjects() {
+        return unpackObjects;
+    }
+
+    HashMap<Integer, SWUnpackObject> unpackObjects;
 
     public SWPipeline(int TILE_SIZE) {
         this.numPackThreads = new AtomicInteger(0);
         this.TILE_SIZE = TILE_SIZE;
-        this.unpackObjects = new ArrayList<>();
+        this.unpackObjects = new HashMap<>();
     }
 
     public static SWPipeline getSingleton() {
         return singleton;
-    }
-
-    public ArrayList<SWUnpackObject> getUnpackObjects() {
-        return unpackObjects;
     }
 
     @Override
@@ -104,9 +105,14 @@ public final class SWPipeline extends Pipeline {
     }
 
     public int acquireThreadID() {
-        int threadID = numPackThreads.getAndIncrement();
-        unpackObjects.add(new SWUnpackObject());
+        int threadID = (numPackThreads.getAndIncrement()) & 0xff;
+        SWUnpackObject obj = new SWUnpackObject();
+        unpackObjects.put(threadID, obj);
         return threadID;
+    }
+
+    public void releaseThreadID(int id) {
+        unpackObjects.remove(id);
     }
 
     @Override

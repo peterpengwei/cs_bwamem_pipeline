@@ -24,7 +24,6 @@ import org.apache.spark.SparkConf
 import org.apache.spark.rdd.RDD
 
 import scala.collection.mutable.MutableList
-
 import cs.ucla.edu.bwaspark.datatype._
 import cs.ucla.edu.bwaspark.worker1.BWAMemWorker1._
 import cs.ucla.edu.bwaspark.worker2.BWAMemWorker2._
@@ -35,7 +34,7 @@ import cs.ucla.edu.bwaspark.FastMap.memMain
 import cs.ucla.edu.bwaspark.FastMapProfile.memMainProfile
 import cs.ucla.edu.bwaspark.commandline._
 import cs.ucla.edu.bwaspark.dnaseq._
-
+import edu.ucla.cs.cdsc.benchmarks.SWPipeline
 import org.bdgenomics.adam.rdd.ADAMContext._
 
 
@@ -299,6 +298,9 @@ object BWAMEMSpark {
       val conf = new SparkConf()
       //val conf = new SparkConf().setAppName("Cloud-Scale BWAMEM: cs-bwamem")
       val sc = new SparkContext(conf)
+
+      val pipeline = SWPipeline.getSingleton()
+      pipeline.execute()
       
       memMain(sc, bwamemArgs) 
       println("CS-BWAMEM Finished!!!")

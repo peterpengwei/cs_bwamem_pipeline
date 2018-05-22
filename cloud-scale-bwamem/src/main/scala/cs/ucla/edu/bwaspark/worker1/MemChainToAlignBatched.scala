@@ -63,7 +63,8 @@ object MemChainToAlignBatched {
   val FPGA_RET_PARAM_NUM = 5
 
   def pipelinePack(taskNum: Int, //number of tasks
-                   tasks: Array[ExtParam]
+                   tasks: Array[ExtParam],
+                   threadID: Int
                   ): SWSendObject = {
     def int2ByteArray(arr: Array[Byte], idx: Int, num: Int): Int = {
       arr(idx) = (num & 0xff).toByte
@@ -117,7 +118,7 @@ object MemChainToAlignBatched {
       buf1Idx = short2ByteArray(buf1, buf1Idx, leftMaxDel.toShort)
       buf1Idx = short2ByteArray(buf1, buf1Idx, rightMaxIns.toShort)
       buf1Idx = short2ByteArray(buf1, buf1Idx, rightMaxDel.toShort)
-      buf1Idx = int2ByteArray(buf1, buf1Idx, tasks(i).idx)
+      buf1Idx = int2ByteArray(buf1, buf1Idx, tasks(i).idx & (threadID << 24))
 
       i = i + 1
     }
@@ -217,10 +218,10 @@ object MemChainToAlignBatched {
                         pipeline: SWPipeline,
                         threadID: Int
                        ): Unit = {
-    println("[Pipeline] start smith-waterman job processing:")
+    println("[Pipeline] start smith-waterman job processing with threadID: " + threadID)
     val unpackObj: AtomicReference[Array[Byte]] = pipeline.getUnpackObjects().get(threadID).getData
 
-    val inputData = pipelinePack(taskNum, tasks)
+    val inputData = pipelinePack(taskNum, tasks, threadID)
 
     println("[Pipline] input data with length: " + inputData.getData().length)
 
@@ -236,6 +237,7 @@ object MemChainToAlignBatched {
       var curData = unpackObj.getAndSet(null)
       if (curData != null) {
         println("[Pipeline] obtained a valid batch of results")
+        pipeline.releaseThreadID(threadID)
         flag = false
         pipelineUnpack(taskNum, curData, results)
       }
@@ -660,8 +662,7 @@ object MemChainToAlignBatched {
     val pipeline = SWPipeline.getSingleton()
     if (pipeline == null)
       println("pipeline singleton refers to a null pointer")
-    val threadID = pipeline.acquireThreadID()
-    pipeline.execute(null)
+    val threadID: Int = pipeline.acquireThreadID()
 
     while (!isFinished) {
 
