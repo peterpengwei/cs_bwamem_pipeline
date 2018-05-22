@@ -22,10 +22,7 @@ public final class SWPipeline extends Pipeline {
 
     private ArrayList<SWUnpackObject> unpackObjects;
 
-    private AtomicInteger numPendingJobs;
-
     public SWPipeline(int TILE_SIZE) {
-        this.numPendingJobs = new AtomicInteger(0);
         this.numPackThreads = new AtomicInteger(0);
         this.TILE_SIZE = TILE_SIZE;
         this.unpackObjects = new ArrayList<>();
@@ -61,12 +58,12 @@ public final class SWPipeline extends Pipeline {
             logger.info("[Pipeline] Sending data with length " + data.length + ": " + (new String(data)).substring(0, 64));
             //BufferedOutputStream out = new BufferedOutputStream(socket.getOutputStream());
             //out.write(data, 0, TILE_SIZE);
-	    byte[] dataLength = new byte[4];
-	    int batchSize = data.length;
-	    dataLength[3] = (byte) ((batchSize >> 24) & 0xff);
-	    dataLength[2] = (byte) ((batchSize >> 16) & 0xff);
-	    dataLength[1] = (byte) ((batchSize >>  8) & 0xff);
-	    dataLength[0] = (byte) ((batchSize >>  0) & 0xff);
+            byte[] dataLength = new byte[4];
+            int batchSize = data.length;
+            dataLength[3] = (byte) ((batchSize >> 24) & 0xff);
+            dataLength[2] = (byte) ((batchSize >> 16) & 0xff);
+            dataLength[1] = (byte) ((batchSize >> 8) & 0xff);
+            dataLength[0] = (byte) ((batchSize >> 0) & 0xff);
             socket.getOutputStream().write(dataLength);
             socket.getOutputStream().write(data);
             socket.close();
@@ -127,8 +124,7 @@ public final class SWPipeline extends Pipeline {
                     if (obj.getData() == null) {
                         //done = true;
                     } else {
-			logger.info("[Pipeline] the size of the batch is " + obj.getData().length);
-			numPendingJobs.getAndIncrement();
+                        logger.info("[Pipeline] the size of the batch is " + obj.getData().length);
                         send(obj);
                     }
                 }
@@ -146,13 +142,10 @@ public final class SWPipeline extends Pipeline {
                 boolean done = false;
                 while (!done) {
                     //logger.info("numJobs = " + numJobs.get() + ", numPendingJobs = " + numPendingJobs.get());
-                    if (numPendingJobs.get() > 0) {
-                        SWRecvObject curObj = (SWRecvObject) receive(server);
-                        numPendingJobs.getAndDecrement();
-                        if (curObj.getData() == null) done = true;
-                        else {
-                            while (getRecvQueue().offer(curObj) == false) ;
-                        }
+                    SWRecvObject curObj = (SWRecvObject) receive(server);
+                    if (curObj.getData() == null) done = true;
+                    else {
+                        while (getRecvQueue().offer(curObj) == false) ;
                     }
                 }
             } catch (Exception e) {
@@ -169,7 +162,8 @@ public final class SWPipeline extends Pipeline {
                     while ((curObj = (SWRecvObject) getRecvQueue().poll()) == null) ;
                     if (curObj.getData() == null) done = true;
                     else {
-                        int curThreadID = curObj.getData()[0];
+                        int curThreadID = curObj.getData()[3];
+                        logger.info("[Pipeline] Received results belong to Thread " + curThreadID);
                         while (unpackObjects.get(curThreadID).getData().compareAndSet(null, curObj.getData())) ;
                     }
                 }
@@ -210,20 +204,5 @@ public final class SWPipeline extends Pipeline {
 
     }
 
-    public int getTILE_SIZE() {
-        return TILE_SIZE;
-    }
-
-    public void setTILE_SIZE(int TILE_SIZE) {
-        this.TILE_SIZE = TILE_SIZE;
-    }
-
-    public AtomicInteger getNumPendingJobs() {
-        return numPendingJobs;
-    }
-
-    public void setNumPendingJobs(AtomicInteger numPendingJobs) {
-        this.numPendingJobs = numPendingJobs;
-    }
 }
 
