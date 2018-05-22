@@ -74,7 +74,7 @@ public final class SWPipeline extends Pipeline {
             socket.getOutputStream().write(data);
             socket.close();
         } catch (Exception e) {
-            logger.severe("Caught exception: " + e);
+            logger.severe("[Send] Caught exception: " + e);
             e.printStackTrace();
         }
     }
@@ -98,7 +98,7 @@ public final class SWPipeline extends Pipeline {
             incoming.close();
             return new SWRecvObject(data);
         } catch (Exception e) {
-            logger.severe("Caught exceptino: " + e);
+            logger.severe("[Recv] Caught exceptino: " + e);
             e.printStackTrace();
             return new SWRecvObject(null);
         }
@@ -140,7 +140,7 @@ public final class SWPipeline extends Pipeline {
                     }
                 }
             } catch (Exception e) {
-                logger.severe("Caught exception: " + e);
+                logger.severe("[Sender] Caught exception: " + e);
                 e.printStackTrace();
             }
         };
@@ -160,7 +160,7 @@ public final class SWPipeline extends Pipeline {
                     }
                 }
             } catch (Exception e) {
-                logger.severe("Caught exception: " + e);
+                logger.severe("[Receiver] Caught exception: " + e);
                 e.printStackTrace();
             }
         };
@@ -179,7 +179,8 @@ public final class SWPipeline extends Pipeline {
                     }
                 }
             } catch (Exception e) {
-                logger.severe("Caught exception: " + e);
+                logger.severe("[Unpacker] Caught exception: " + e);
+                e.printStackTrace();
             }
         };
 

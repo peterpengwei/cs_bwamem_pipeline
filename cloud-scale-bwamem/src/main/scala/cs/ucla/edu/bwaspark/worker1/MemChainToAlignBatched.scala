@@ -220,7 +220,6 @@ object MemChainToAlignBatched {
                         threadID: Int
                        ): Unit = {
     println("[Pipeline] start smith-waterman job processing with threadID: " + threadID)
-    val unpackObj: AtomicReference[Array[Byte]] = pipeline.getUnpackObjects().get(threadID).getData
 
     val inputData = pipelinePack(taskNum, tasks, threadID)
 
@@ -234,15 +233,15 @@ object MemChainToAlignBatched {
     println("[Pipeline] a batch is sent to the pipeline")
 
     var flag = true
+    var curData: Array[Byte] = _
     while (flag) {
-      var curData = unpackObj.getAndSet(null)
+      curData = pipeline.getUnpackObjects().get(threadID).getData().getAndSet(null)
       if (curData != null) {
         println("[Pipeline] obtained a valid batch of results")
         flag = false
-        pipelineUnpack(taskNum, curData, results)
       }
     }
-    //pipelineUnpack(taskNum, outputData, results)
+    pipelineUnpack(taskNum, curData, results)
   }
 
   //Run DPs on FPGA
