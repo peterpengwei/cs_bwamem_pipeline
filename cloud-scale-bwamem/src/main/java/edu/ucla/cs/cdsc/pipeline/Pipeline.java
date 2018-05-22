@@ -19,25 +19,25 @@ public abstract class Pipeline {
     private static final int RECV_QUEUE_SIZE = 32;
     private static final int UNPACK_QUEUE_SIZE = 32;
 
-    private static SpscLinkedQueue<PackObject> packQueue = new SpscLinkedQueue<>();
-    //private static SpscLinkedQueue<SendObject> sendQueue = new SpscLinkedQueue<>();
-    private static MpscLinkedQueue<SendObject> sendQueue = MpscLinkedQueue.newMpscLinkedQueue();
-    private static SpscLinkedQueue<RecvObject> recvQueue = new SpscLinkedQueue<>();
-    private static SpscLinkedQueue<UnpackObject> unpackQueue = new SpscLinkedQueue<>();
+    private SpscLinkedQueue<PackObject> packQueue = new SpscLinkedQueue<>();
+    //private SpscLinkedQueue<SendObject> sendQueue = new SpscLinkedQueue<>();
+    private MpscLinkedQueue<SendObject> sendQueue = MpscLinkedQueue.newMpscLinkedQueue();
+    private SpscLinkedQueue<RecvObject> recvQueue = new SpscLinkedQueue<>();
+    private SpscLinkedQueue<UnpackObject> unpackQueue = new SpscLinkedQueue<>();
 
-    public static SpscLinkedQueue<PackObject> getPackQueue() {
+    public SpscLinkedQueue<PackObject> getPackQueue() {
         return packQueue;
     }
 
-    public static MpscLinkedQueue<SendObject> getSendQueue() {
+    public MpscLinkedQueue<SendObject> getSendQueue() {
         return sendQueue;
     }
 
-    public static SpscLinkedQueue<RecvObject> getRecvQueue() {
+    public SpscLinkedQueue<RecvObject> getRecvQueue() {
         return recvQueue;
     }
 
-    public static SpscLinkedQueue<UnpackObject> getUnpackQueue() {
+    public SpscLinkedQueue<UnpackObject> getUnpackQueue() {
         return unpackQueue;
     }
 

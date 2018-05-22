@@ -216,22 +216,25 @@ object MemChainToAlignBatched {
                         pipeline: SWPipeline,
                         threadID: Int
                        ): Unit = {
-    System.out.println("[Pipeline] start smith-waterman job processing:")
+    println("[Pipeline] start smith-waterman job processing:")
     val unpackObj: AtomicReference[Array[Byte]] = pipeline.getUnpackObjects().get(threadID).getData
 
     val inputData = pipelinePack(taskNum, tasks)
-    val sendQueue = Pipeline.getSendQueue()
+
+    println("[Pipline] input data with length: " + inputData.getData().length)
+
+    val sendQueue = pipeline.getSendQueue()
 
     while (sendQueue.offer(inputData) == false) {
     }
 
-    System.out.println("[Pipeline] a batch is sent to the pipeline")
+    println("[Pipeline] a batch is sent to the pipeline")
 
     var flag = true
     while (flag) {
       var curData = unpackObj.getAndSet(null)
       if (curData != null) {
-        System.out.println("[Pipeline] obtained a valid batch of results")
+        println("[Pipeline] obtained a valid batch of results")
         flag = false
         pipelineUnpack(taskNum, curData, results)
       }
@@ -655,7 +658,7 @@ object MemChainToAlignBatched {
 
     val pipeline = SWPipeline.getSingleton()
     if (pipeline == null)
-      System.out.println("pipeline singleton refers to a null pointer")
+      println("pipeline singleton refers to a null pointer")
     val threadID = pipeline.acquireThreadID()
     pipeline.execute(null)
 

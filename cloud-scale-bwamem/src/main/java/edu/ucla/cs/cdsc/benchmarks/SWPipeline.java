@@ -58,10 +58,16 @@ public final class SWPipeline extends Pipeline {
                 }
             }
             byte[] data = ((SWSendObject) obj).getData();
-            //logger.info("Sending data with length " + data.length + ": " + (new String(data)).substring(0, 64));
+            logger.info("[Pipeline] Sending data with length " + data.length + ": " + (new String(data)).substring(0, 64));
             //BufferedOutputStream out = new BufferedOutputStream(socket.getOutputStream());
             //out.write(data, 0, TILE_SIZE);
-            socket.getOutputStream().write(data.length);
+	    byte[] dataLength = new byte[4];
+	    int batchSize = data.length;
+	    dataLength[3] = (byte) ((batchSize >> 24) & 0xff);
+	    dataLength[2] = (byte) ((batchSize >> 16) & 0xff);
+	    dataLength[1] = (byte) ((batchSize >>  8) & 0xff);
+	    dataLength[0] = (byte) ((batchSize >>  0) & 0xff);
+            socket.getOutputStream().write(dataLength);
             socket.getOutputStream().write(data);
             socket.close();
         } catch (Exception e) {
@@ -85,7 +91,7 @@ public final class SWPipeline extends Pipeline {
                 length -= n;
             }
             //in.read(data);
-            //logger.info("Received data with length " + data.length + ": " + (new String(data)).substring(0, 64));
+            logger.info("Received data with length " + data.length + ": " + (new String(data)).substring(0, 64));
             incoming.close();
             return new SWRecvObject(data);
         } catch (Exception e) {
@@ -116,11 +122,13 @@ public final class SWPipeline extends Pipeline {
                 boolean done = false;
                 while (!done) {
                     SWSendObject obj;
-                    while ((obj = (SWSendObject) SWPipeline.getSendQueue().poll()) == null) ;
+                    while ((obj = (SWSendObject) getSendQueue().poll()) == null) ;
                     logger.info("[Pipeline] obtained a valid input from the send queue");
                     if (obj.getData() == null) {
                         //done = true;
                     } else {
+			logger.info("[Pipeline] the size of the batch is " + obj.getData().length);
+			numPendingJobs.getAndIncrement();
                         send(obj);
                     }
                 }
@@ -143,7 +151,7 @@ public final class SWPipeline extends Pipeline {
                         numPendingJobs.getAndDecrement();
                         if (curObj.getData() == null) done = true;
                         else {
-                            while (SWPipeline.getRecvQueue().offer(curObj) == false) ;
+                            while (getRecvQueue().offer(curObj) == false) ;
                         }
                     }
                 }
@@ -158,7 +166,7 @@ public final class SWPipeline extends Pipeline {
                 boolean done = false;
                 while (!done) {
                     SWRecvObject curObj;
-                    while ((curObj = (SWRecvObject) SWPipeline.getRecvQueue().poll()) == null) ;
+                    while ((curObj = (SWRecvObject) getRecvQueue().poll()) == null) ;
                     if (curObj.getData() == null) done = true;
                     else {
                         int curThreadID = curObj.getData()[0];
