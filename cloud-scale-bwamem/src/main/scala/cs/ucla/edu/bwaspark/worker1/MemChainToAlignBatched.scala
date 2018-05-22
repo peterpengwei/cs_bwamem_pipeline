@@ -237,7 +237,6 @@ object MemChainToAlignBatched {
       var curData = unpackObj.getAndSet(null)
       if (curData != null) {
         println("[Pipeline] obtained a valid batch of results")
-        pipeline.releaseThreadID(threadID)
         flag = false
         pipelineUnpack(taskNum, curData, results)
       }
@@ -812,6 +811,8 @@ object MemChainToAlignBatched {
       start = increRes._2
       end = increRes._3
     }
+
+    pipeline.releaseThreadID(threadID)
   }
 
   /**
