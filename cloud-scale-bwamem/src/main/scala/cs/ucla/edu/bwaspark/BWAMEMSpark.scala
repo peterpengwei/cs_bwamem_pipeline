@@ -35,6 +35,7 @@ import cs.ucla.edu.bwaspark.FastMapProfile.memMainProfile
 import cs.ucla.edu.bwaspark.commandline._
 import cs.ucla.edu.bwaspark.dnaseq._
 import edu.ucla.cs.cdsc.benchmarks.SWPipeline
+import edu.ucla.cs.cdsc.benchmarks.SWPipeline._
 import org.bdgenomics.adam.rdd.ADAMContext._
 
 
