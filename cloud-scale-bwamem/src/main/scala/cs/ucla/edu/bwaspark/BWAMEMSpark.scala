@@ -301,7 +301,7 @@ object BWAMEMSpark {
       val sc = new SparkContext(conf)
 
       val pipeline = SWPipeline.getSingleton()
-      pipeline.execute()
+      pipeline.execute(null)
       
       memMain(sc, bwamemArgs) 
       println("CS-BWAMEM Finished!!!")
