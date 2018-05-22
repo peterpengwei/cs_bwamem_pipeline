@@ -118,7 +118,7 @@ object MemChainToAlignBatched {
       buf1Idx = short2ByteArray(buf1, buf1Idx, leftMaxDel.toShort)
       buf1Idx = short2ByteArray(buf1, buf1Idx, rightMaxIns.toShort)
       buf1Idx = short2ByteArray(buf1, buf1Idx, rightMaxDel.toShort)
-      buf1Idx = int2ByteArray(buf1, buf1Idx, tasks(i).idx & (threadID << 24))
+      buf1Idx = int2ByteArray(buf1, buf1Idx, tasks(i).idx | (threadID << 24))
 
       i = i + 1
     }
