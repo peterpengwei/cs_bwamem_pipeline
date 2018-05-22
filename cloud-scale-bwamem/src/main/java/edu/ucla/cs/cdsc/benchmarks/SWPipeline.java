@@ -9,6 +9,7 @@ import java.net.Socket;
 import java.net.SocketAddress;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -20,14 +21,14 @@ import java.util.logging.Logger;
 public final class SWPipeline extends Pipeline {
     private static final Logger logger = Logger.getLogger(SWPipeline.class.getName());
     private static final SWPipeline singleton = new SWPipeline(1 << 22);
-    HashMap<Integer, SWUnpackObject> unpackObjects;
+    ConcurrentHashMap<Integer, SWUnpackObject> unpackObjects;
     private AtomicInteger numPackThreads;
     private AtomicBoolean isRunning;
     private int TILE_SIZE;
     public SWPipeline(int TILE_SIZE) {
         this.numPackThreads = new AtomicInteger(0);
         this.TILE_SIZE = TILE_SIZE;
-        this.unpackObjects = new HashMap<>();
+        this.unpackObjects = new ConcurrentHashMap<>();
         this.isRunning = new AtomicBoolean(false);
     }
 
@@ -35,13 +36,15 @@ public final class SWPipeline extends Pipeline {
         return singleton;
     }
 
+    public ConcurrentHashMap<Integer, SWUnpackObject> getUnpackObjects() {
+        return unpackObjects;
+    }
+
     public AtomicBoolean getIsRunning() {
         return isRunning;
     }
 
-    public HashMap<Integer, SWUnpackObject> getUnpackObjects() {
-        return unpackObjects;
-    }
+
 
     @Override
     public SendObject pack(PackObject obj) {
