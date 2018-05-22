@@ -11,7 +11,7 @@ import java.util.concurrent.atomic.AtomicReference;
 public class SWUnpackObject extends UnpackObject {
 
     public SWUnpackObject() {
-        this.data = null;
+        this.data = new AtomicReference<>(null);
     }
 
     public AtomicReference<byte[]> getData() {
