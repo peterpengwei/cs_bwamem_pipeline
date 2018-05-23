@@ -233,7 +233,7 @@ object MemChainToAlignBatched {
     println("[Pipeline] a batch is sent to the pipeline")
 
     var flag = true
-    var curData: Array[Byte] = _
+    var curData: Array[Byte] = new Array[Byte](0)
     while (flag) {
       curData = pipeline.getUnpackObjects().get(threadID).getData().getAndSet(null)
       if (curData != null) {
@@ -813,7 +813,7 @@ object MemChainToAlignBatched {
       end = increRes._3
     }
 
-    pipeline.releaseThreadID(threadID)
+    //pipeline.releaseThreadID(threadID)
     println("Thread ID " + threadID + " is expired")
   }
 
