@@ -231,6 +231,7 @@ object MemChainToAlignBatched {
     pipelineUnpack(taskNum, outputData, results)
   }
 
+  /*
   //Run DPs on FPGA
   def runOnFPGAJNI(taskNum: Int, //number of tasks
                    tasks: Array[ExtParam], // task array
@@ -509,6 +510,7 @@ object MemChainToAlignBatched {
     conn.closeConnection();
 
   }
+  */
 
   /**
     * The function that calculates the results before Smith-Waterman
