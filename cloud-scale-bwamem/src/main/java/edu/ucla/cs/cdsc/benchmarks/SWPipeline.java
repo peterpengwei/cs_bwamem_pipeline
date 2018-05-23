@@ -21,14 +21,14 @@ import java.util.logging.Logger;
 public final class SWPipeline extends Pipeline {
     private static final Logger logger = Logger.getLogger(SWPipeline.class.getName());
     private static final SWPipeline singleton = new SWPipeline(1 << 22);
-    ConcurrentHashMap<Integer, SWUnpackObject> unpackObjects;
+    private HashMap<Integer, SWUnpackObject> unpackObjects;
     private AtomicInteger numPackThreads;
     private AtomicBoolean isRunning;
     private int TILE_SIZE;
     public SWPipeline(int TILE_SIZE) {
         this.numPackThreads = new AtomicInteger(0);
         this.TILE_SIZE = TILE_SIZE;
-        this.unpackObjects = new ConcurrentHashMap<>();
+        this.unpackObjects = new HashMap<>();
         this.isRunning = new AtomicBoolean(false);
     }
 
@@ -36,7 +36,7 @@ public final class SWPipeline extends Pipeline {
         return singleton;
     }
 
-    public ConcurrentHashMap<Integer, SWUnpackObject> getUnpackObjects() {
+    public HashMap<Integer, SWUnpackObject> getUnpackObjects() {
         return unpackObjects;
     }
 
@@ -113,9 +113,8 @@ public final class SWPipeline extends Pipeline {
         return null;
     }
 
-    public int acquireThreadID() {
+    public int acquireThreadID(SWUnpackObject obj) {
         int threadID = (numPackThreads.getAndIncrement()) & 0xff;
-        SWUnpackObject obj = new SWUnpackObject();
         unpackObjects.put(threadID, obj);
         return threadID;
     }

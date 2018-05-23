@@ -18,39 +18,23 @@
 
 package cs.ucla.edu.bwaspark.worker1
 
-import scala.collection.mutable.MutableList
+import java.nio.{ByteBuffer, ByteOrder}
+
 import cs.ucla.edu.bwaspark.datatype._
 import cs.ucla.edu.bwaspark.util.BNTSeqUtil._
 import cs.ucla.edu.bwaspark.util.SWUtil._
-import cs.ucla.edu.bwaspark.debug.DebugFlag._
-import accUCLA.api._
-import java.util._
-import java.io.IOException
-import java.io.ObjectOutputStream
-import java.io.OutputStream
-import java.io.DataInputStream
-import java.io.DataOutputStream
-import java.io.ByteArrayOutputStream
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
-import java.net.Socket
-import java.net.InetAddress
-import java.net.ServerSocket
-import java.util
+import edu.ucla.cs.cdsc.benchmarks.SWUnpackObject
+
+import scala.collection.mutable.MutableList
 
 // import sun.plugin2.message.Pipe
 
 // Used for read test input data
-import java.io.{FileReader, BufferedReader}
+import java.io.{BufferedReader, FileReader}
 
 // JNI function for SWExtend
 import cs.ucla.edu.bwaspark.jni.SWExtendFPGAJNI
-
-import edu.ucla.cs.cdsc.benchmarks.SWPipeline
-import edu.ucla.cs.cdsc.benchmarks.SWPipeline._
-import edu.ucla.cs.cdsc.benchmarks.SWSendObject
-import edu.ucla.cs.cdsc.pipeline.Pipeline
-import java.util.concurrent.atomic.AtomicReference
+import edu.ucla.cs.cdsc.benchmarks.{SWPipeline, SWSendObject}
 
 
 object MemChainToAlignBatched {
@@ -191,24 +175,31 @@ object MemChainToAlignBatched {
       byteBuffer.order(ByteOrder.LITTLE_ENDIAN)
       return byteBuffer.getInt()
     }
+
     def bytesToShort(buffer: Array[Byte], idx: Int): Short = {
       val byteBuffer: ByteBuffer = ByteBuffer.wrap(buffer, idx, 2)
       byteBuffer.order(ByteOrder.LITTLE_ENDIAN)
       return byteBuffer.getShort()
     }
+
     var i = 0
     while (i < taskNum) {
       if (results(i) == null) results(i) = new ExtRet
       results(i).idx = bytesToInt(bufRet, 0 + FPGA_RET_PARAM_NUM * 4 * i)
       results(i).idx = results(i).idx & 0xffffff
-      results(i).qBeg = bytesToShort(bufRet, 4 + FPGA_RET_PARAM_NUM * 4 * i)
-      results(i).qEnd = bytesToShort(bufRet, 6 + FPGA_RET_PARAM_NUM * 4 * i)
-      results(i).rBeg = bytesToShort(bufRet, 8 + FPGA_RET_PARAM_NUM * 4 * i)
-      results(i).rEnd = bytesToShort(bufRet, 10 + FPGA_RET_PARAM_NUM * 4 * i)
-      results(i).score = bytesToShort(bufRet, 12 + FPGA_RET_PARAM_NUM * 4 * i)
-      results(i).trueScore = bytesToShort(bufRet, 14 + FPGA_RET_PARAM_NUM * 4 * i)
-      results(i).width = bytesToShort(bufRet, 16 + FPGA_RET_PARAM_NUM * 4 * i)
-      println("[Pipeline] unpack index verification: " + results(i).idx)
+      if (results(i).idx < 0 || results(i).idx >= taskNum) {
+        println("[Pipeline] Invalid idx " + results(i).idx + ", possibly because of accelerator error")
+        results(i) = null
+      }
+      else {
+        results(i).qBeg = bytesToShort(bufRet, 4 + FPGA_RET_PARAM_NUM * 4 * i)
+        results(i).qEnd = bytesToShort(bufRet, 6 + FPGA_RET_PARAM_NUM * 4 * i)
+        results(i).rBeg = bytesToShort(bufRet, 8 + FPGA_RET_PARAM_NUM * 4 * i)
+        results(i).rEnd = bytesToShort(bufRet, 10 + FPGA_RET_PARAM_NUM * 4 * i)
+        results(i).score = bytesToShort(bufRet, 12 + FPGA_RET_PARAM_NUM * 4 * i)
+        results(i).trueScore = bytesToShort(bufRet, 14 + FPGA_RET_PARAM_NUM * 4 * i)
+        results(i).width = bytesToShort(bufRet, 16 + FPGA_RET_PARAM_NUM * 4 * i)
+      }
       i = i + 1
     }
   }
@@ -217,13 +208,14 @@ object MemChainToAlignBatched {
                         tasks: Array[ExtParam],
                         results: Array[ExtRet],
                         pipeline: SWPipeline,
-                        threadID: Int
+                        threadID: Int,
+                        resultObj: SWUnpackObject
                        ): Unit = {
     println("[Pipeline] start smith-waterman job processing with threadID: " + threadID)
 
     val inputData = pipelinePack(taskNum, tasks, threadID)
 
-    println("[Pipline] input data with length: " + inputData.getData().length)
+    println("[Pipline] input data with length: " + inputData.getData().length + " and jobs " + taskNum)
 
     val sendQueue = pipeline.getSendQueue()
 
@@ -232,16 +224,11 @@ object MemChainToAlignBatched {
 
     println("[Pipeline] a batch is sent to the pipeline")
 
-    var flag = true
-    var curData: Array[Byte] = new Array[Byte](0)
-    while (flag) {
-      curData = pipeline.getUnpackObjects().get(threadID).getData().getAndSet(null)
-      if (curData != null) {
-        println("[Pipeline] obtained a valid batch of results")
-        flag = false
-      }
+    while (resultObj.getData.get() == null) {
     }
-    pipelineUnpack(taskNum, curData, results)
+    val outputData: Array[Byte] = resultObj.getData.getAndSet(null)
+    println("[Pipeline] obtained a valid batch of results")
+    pipelineUnpack(taskNum, outputData, results)
   }
 
   //Run DPs on FPGA
@@ -661,7 +648,9 @@ object MemChainToAlignBatched {
     val pipeline = SWPipeline.getSingleton
     if (pipeline == null)
       println("pipeline singleton refers to a null pointer")
-    var threadID: Int = pipeline.acquireThreadID()
+
+    val resultObj: SWUnpackObject = new SWUnpackObject
+    var threadID = pipeline.acquireThreadID(resultObj)
     println("[Pipeline] acquired Thread ID = " + threadID)
 
     while (!isFinished) {
@@ -768,7 +757,7 @@ object MemChainToAlignBatched {
         if (taskIdx >= threshold) {
           //val ret = runOnFPGA(taskIdx, numOfReads, fpgaExtTasks, fpgaExtResults)
           //val ret = runOnFPGAJNI(taskIdx, fpgaExtTasks, fpgaExtResults)
-          val ret = runOnFPGAPipeline(taskIdx, fpgaExtTasks, fpgaExtResults, pipeline, threadID)
+          val ret = runOnFPGAPipeline(taskIdx, fpgaExtTasks, fpgaExtResults, pipeline, threadID, resultObj)
         }
         else {
           i = 0;
@@ -812,9 +801,6 @@ object MemChainToAlignBatched {
       start = increRes._2
       end = increRes._3
     }
-
-    //pipeline.releaseThreadID(threadID)
-    println("Thread ID " + threadID + " is expired")
   }
 
   /**
