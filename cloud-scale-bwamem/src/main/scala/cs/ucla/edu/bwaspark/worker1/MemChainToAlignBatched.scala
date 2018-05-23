@@ -168,7 +168,8 @@ object MemChainToAlignBatched {
 
   def pipelineUnpack(taskNum: Int,
                      bufRet: Array[Byte],
-                     results: Array[ExtRet]
+                     results: Array[ExtRet],
+                     numOfReads: Int
                     ) {
     def bytesToInt(buffer: Array[Byte], idx: Int): Int = {
       val byteBuffer: ByteBuffer = ByteBuffer.wrap(buffer, idx, 4)
@@ -187,7 +188,7 @@ object MemChainToAlignBatched {
       if (results(i) == null) results(i) = new ExtRet
       results(i).idx = bytesToInt(bufRet, 0 + FPGA_RET_PARAM_NUM * 4 * i)
       results(i).idx = results(i).idx & 0xffffff
-      if (results(i).idx < 0 || results(i).idx >= taskNum) {
+      if (results(i).idx < 0 || results(i).idx >= numOfReads) {
         println("[Pipeline] Invalid idx " + results(i).idx + ", possibly because of accelerator error")
         results(i) = null
       }
@@ -209,7 +210,8 @@ object MemChainToAlignBatched {
                         results: Array[ExtRet],
                         pipeline: SWPipeline,
                         threadID: Int,
-                        resultObj: SWUnpackObject
+                        resultObj: SWUnpackObject,
+                        numOfReads: Int
                        ): Unit = {
     println("[Pipeline] start smith-waterman job processing with threadID: " + threadID)
 
@@ -228,7 +230,7 @@ object MemChainToAlignBatched {
     }
     val outputData: Array[Byte] = resultObj.getData.getAndSet(null)
     println("[Pipeline] obtained a valid batch of results")
-    pipelineUnpack(taskNum, outputData, results)
+    pipelineUnpack(taskNum, outputData, results, numOfReads)
   }
 
   /*
@@ -759,7 +761,7 @@ object MemChainToAlignBatched {
         if (taskIdx >= threshold) {
           //val ret = runOnFPGA(taskIdx, numOfReads, fpgaExtTasks, fpgaExtResults)
           //val ret = runOnFPGAJNI(taskIdx, fpgaExtTasks, fpgaExtResults)
-          val ret = runOnFPGAPipeline(taskIdx, fpgaExtTasks, fpgaExtResults, pipeline, threadID, resultObj)
+          val ret = runOnFPGAPipeline(taskIdx, fpgaExtTasks, fpgaExtResults, pipeline, threadID, resultObj, numOfReads)
         }
         else {
           i = 0;
@@ -779,14 +781,16 @@ object MemChainToAlignBatched {
 
       i = 0;
       while (i < taskIdx) {
-        var tmpIdx = fpgaExtResults(i).idx
-        newRegs(tmpIdx).qBeg = fpgaExtResults(i).qBeg
-        newRegs(tmpIdx).rBeg = fpgaExtResults(i).rBeg + seedArray(tmpIdx).rBeg
-        newRegs(tmpIdx).qEnd = fpgaExtResults(i).qEnd + seedArray(tmpIdx).qBeg + seedArray(tmpIdx).len
-        newRegs(tmpIdx).rEnd = fpgaExtResults(i).rEnd + seedArray(tmpIdx).rBeg + seedArray(tmpIdx).len
-        newRegs(tmpIdx).score = fpgaExtResults(i).score
-        newRegs(tmpIdx).trueScore = fpgaExtResults(i).trueScore
-        newRegs(tmpIdx).width = fpgaExtResults(i).width
+        if (fpgaExtResults(i) != null) {
+          var tmpIdx = fpgaExtResults(i).idx
+          newRegs(tmpIdx).qBeg = fpgaExtResults(i).qBeg
+          newRegs(tmpIdx).rBeg = fpgaExtResults(i).rBeg + seedArray(tmpIdx).rBeg
+          newRegs(tmpIdx).qEnd = fpgaExtResults(i).qEnd + seedArray(tmpIdx).qBeg + seedArray(tmpIdx).len
+          newRegs(tmpIdx).rEnd = fpgaExtResults(i).rEnd + seedArray(tmpIdx).rBeg + seedArray(tmpIdx).len
+          newRegs(tmpIdx).score = fpgaExtResults(i).score
+          newRegs(tmpIdx).trueScore = fpgaExtResults(i).trueScore
+          newRegs(tmpIdx).width = fpgaExtResults(i).width
+        }
         i = i + 1;
       }
       i = start;
