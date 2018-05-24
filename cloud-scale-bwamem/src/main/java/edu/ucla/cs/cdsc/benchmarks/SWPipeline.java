@@ -27,7 +27,10 @@ public final class SWPipeline extends Pipeline {
     public SWPipeline(int TILE_SIZE) {
         this.numPackThreads = new AtomicInteger(0);
         this.TILE_SIZE = TILE_SIZE;
-        this.unpackObjects = new HashMap<>();
+        this.unpackObjects = new HashMap<>(256);
+        for (int i=0; i<256; i++) {
+            this.unpackObjects.put(i, new SWUnpackObject());
+        }
         this.isRunning = new AtomicBoolean(false);
     }
 
@@ -96,11 +99,11 @@ public final class SWPipeline extends Pipeline {
                 length -= n;
             }
             //in.read(data);
-            //logger.info("Received data with length " + data.length + ": " + (new String(data)).substring(0, 64));
+            logger.info("Received data with length " + offset);
             incoming.close();
             return new SWRecvObject(data);
         } catch (Exception e) {
-            logger.severe("[Recv] Caught exceptino: " + e);
+            logger.severe("[Recv] Caught exception: " + e);
             e.printStackTrace();
             return new SWRecvObject(null);
         }
@@ -111,9 +114,8 @@ public final class SWPipeline extends Pipeline {
         return null;
     }
 
-    public int acquireThreadID(SWUnpackObject obj) {
+    public int acquireThreadID() {
         int threadID = (numPackThreads.getAndIncrement()) & 0xff;
-        unpackObjects.put(threadID, obj);
         return threadID;
     }
 
@@ -157,7 +159,10 @@ public final class SWPipeline extends Pipeline {
                     SWRecvObject curObj = (SWRecvObject) receive(server);
                     if (curObj.getData() == null) done = true;
                     else {
-                        while (getRecvQueue().offer(curObj) == false) ;
+                        int curThreadID = ((int) curObj.getData()[3]) & 0xff;
+                        AtomicReference<byte[]> curReference = unpackObjects.get(curThreadID).getData();
+                        while (curReference.get() != null) ;
+                        curReference.set(curObj.getData());
                     }
                 }
             } catch (Exception e) {
@@ -166,35 +171,10 @@ public final class SWPipeline extends Pipeline {
             }
         };
 
-        Runnable unpacker = () -> {
-            try {
-                boolean done = false;
-                while (!done) {
-                    SWRecvObject curObj;
-                    while ((curObj = (SWRecvObject) getRecvQueue().poll()) == null) ;
-                    if (curObj.getData() == null) done = true;
-                    else {
-                        int curThreadID = ((int) curObj.getData()[3]) & 0xff;
-                        //logger.info("[Pipeline] Received results belong to Thread " + curThreadID);
-                        //logger.info("[Pipeline] Hash table size = " + unpackObjects.size());
-                        AtomicReference<byte[]> curReference = unpackObjects.get(curThreadID).getData();
-                        while (curReference.get() != null) ;
-                        curReference.set(curObj.getData());
-                        //while (curReference.compareAndSet(null, curObj.getData())) ;
-                    }
-                }
-            } catch (Exception e) {
-                logger.severe("[Unpacker] Caught exception: " + e);
-                e.printStackTrace();
-            }
-        };
-
         Thread sendThread = new Thread(sender);
         sendThread.start();
         Thread recvThread = new Thread(receiver);
         recvThread.start();
-        Thread unpackThread = new Thread(unpacker);
-        unpackThread.start();
 
         return null;
 
@@ -202,7 +182,6 @@ public final class SWPipeline extends Pipeline {
         try {
             sendThread.join();
             recvThread.join();
-            unpackThread.join();
         } catch (Exception e) {
             logger.severe("Caught exception: " + e);
             e.printStackTrace();

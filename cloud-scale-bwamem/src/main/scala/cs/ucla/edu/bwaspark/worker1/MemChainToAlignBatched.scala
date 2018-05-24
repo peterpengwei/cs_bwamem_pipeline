@@ -652,8 +652,9 @@ object MemChainToAlignBatched {
     if (pipeline == null)
       println("pipeline singleton refers to a null pointer")
 
-    val resultObj: SWUnpackObject = new SWUnpackObject
-    var threadID = pipeline.acquireThreadID(resultObj)
+    var threadID = pipeline.acquireThreadID()
+    val resultObj = pipeline.getUnpackObjects().get(threadID)
+
     //println("[Pipeline] acquired Thread ID = " + threadID)
 
     while (!isFinished) {
@@ -782,14 +783,14 @@ object MemChainToAlignBatched {
       while (i < taskIdx) {
         if (fpgaExtResults(i) != null) {
           var tmpIdx = fpgaExtResults(i).idx
-	  if (tmpIdx < 0 || tmpIdx >= numOfReads) {
-	    //println("[Software] idx " + tmpIdx + " out of bound, probably due to software bugs")
-	    fpgaExtResults(i) = null
-	  }
-	  else if (newRegs(tmpIdx) == null) {
-	    //println("[BWAMEM] idx " + tmpIdx + " does not correspond to a valid item")
-	  }
-	  else {
+          if (tmpIdx < 0 || tmpIdx >= numOfReads) {
+            //println("[Software] idx " + tmpIdx + " out of bound, probably due to software bugs")
+            fpgaExtResults(i) = null
+          }
+          else if (newRegs(tmpIdx) == null) {
+            //println("[BWAMEM] idx " + tmpIdx + " does not correspond to a valid item")
+          }
+          else {
             newRegs(tmpIdx).qBeg = fpgaExtResults(i).qBeg
             newRegs(tmpIdx).rBeg = fpgaExtResults(i).rBeg + seedArray(tmpIdx).rBeg
             newRegs(tmpIdx).qEnd = fpgaExtResults(i).qEnd + seedArray(tmpIdx).qBeg + seedArray(tmpIdx).len
@@ -797,7 +798,7 @@ object MemChainToAlignBatched {
             newRegs(tmpIdx).score = fpgaExtResults(i).score
             newRegs(tmpIdx).trueScore = fpgaExtResults(i).trueScore
             newRegs(tmpIdx).width = fpgaExtResults(i).width
-	  }
+          }
         }
         i = i + 1;
       }
