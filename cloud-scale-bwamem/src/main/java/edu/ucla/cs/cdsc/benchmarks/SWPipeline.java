@@ -99,7 +99,7 @@ public final class SWPipeline extends Pipeline {
                 length -= n;
             }
             //in.read(data);
-            logger.info("Received data with length " + offset);
+            //logger.info("Received data with length " + offset);
             incoming.close();
             return new SWRecvObject(data);
         } catch (Exception e) {
