@@ -21,7 +21,7 @@ public abstract class Pipeline {
 
     private SpscLinkedQueue<PackObject> packQueue = new SpscLinkedQueue<>();
     //private SpscLinkedQueue<SendObject> sendQueue = new SpscLinkedQueue<>();
-    private MpscLinkedQueue<SendObject> sendQueue = MpscLinkedQueue.newMpscLinkedQueue();
+    private MpscArrayQueue<SendObject> sendQueue = new MpscArrayQueue<>(SEND_QUEUE_SIZE);
     private SpscLinkedQueue<RecvObject> recvQueue = new SpscLinkedQueue<>();
     private SpscLinkedQueue<UnpackObject> unpackQueue = new SpscLinkedQueue<>();
 
@@ -29,7 +29,7 @@ public abstract class Pipeline {
         return packQueue;
     }
 
-    public MpscLinkedQueue<SendObject> getSendQueue() {
+    public MpscArrayQueue<SendObject> getSendQueue() {
         return sendQueue;
     }
 
