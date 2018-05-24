@@ -783,13 +783,22 @@ object MemChainToAlignBatched {
       while (i < taskIdx) {
         if (fpgaExtResults(i) != null) {
           var tmpIdx = fpgaExtResults(i).idx
-          newRegs(tmpIdx).qBeg = fpgaExtResults(i).qBeg
-          newRegs(tmpIdx).rBeg = fpgaExtResults(i).rBeg + seedArray(tmpIdx).rBeg
-          newRegs(tmpIdx).qEnd = fpgaExtResults(i).qEnd + seedArray(tmpIdx).qBeg + seedArray(tmpIdx).len
-          newRegs(tmpIdx).rEnd = fpgaExtResults(i).rEnd + seedArray(tmpIdx).rBeg + seedArray(tmpIdx).len
-          newRegs(tmpIdx).score = fpgaExtResults(i).score
-          newRegs(tmpIdx).trueScore = fpgaExtResults(i).trueScore
-          newRegs(tmpIdx).width = fpgaExtResults(i).width
+	  if (tmpIdx < 0 || tmpIdx >= numOfReads) {
+	    println("[Software] idx " + tmpIdx + " out of bound, probably due to software bugs")
+	    fpgaExtResults(i) = null
+	  }
+	  else if (newRegs(tmpIdx) == null) {
+	    println("[BWAMEM] idx " + tmpIdx + " does not correspond to a valid item")
+	  }
+	  else {
+            newRegs(tmpIdx).qBeg = fpgaExtResults(i).qBeg
+            newRegs(tmpIdx).rBeg = fpgaExtResults(i).rBeg + seedArray(tmpIdx).rBeg
+            newRegs(tmpIdx).qEnd = fpgaExtResults(i).qEnd + seedArray(tmpIdx).qBeg + seedArray(tmpIdx).len
+            newRegs(tmpIdx).rEnd = fpgaExtResults(i).rEnd + seedArray(tmpIdx).rBeg + seedArray(tmpIdx).len
+            newRegs(tmpIdx).score = fpgaExtResults(i).score
+            newRegs(tmpIdx).trueScore = fpgaExtResults(i).trueScore
+            newRegs(tmpIdx).width = fpgaExtResults(i).width
+	  }
         }
         i = i + 1;
       }
