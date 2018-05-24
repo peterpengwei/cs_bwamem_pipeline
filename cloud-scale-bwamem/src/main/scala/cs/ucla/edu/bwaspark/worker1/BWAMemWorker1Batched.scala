@@ -39,9 +39,11 @@ import edu.ucla.cs.cdsc.benchmarks.SWPipeline
 object BWAMemWorker1Batched {
 
   val pipeline = SWPipeline.getSingleton()
-  if (pipeline.getIsRunning().getAndSet(true) == false) {
-    pipeline.execute(null)
-    println("[Pipeline] per-thread initialization")
+  if (pipeline.getIsRunning().get() == false) {
+    if (pipeline.getIsRunning().getAndSet(true) == false) {
+      pipeline.execute(null)
+      println("[Pipeline] per-thread initialization")
+    }
   }
   
   /**

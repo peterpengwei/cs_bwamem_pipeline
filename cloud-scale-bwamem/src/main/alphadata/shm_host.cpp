@@ -95,7 +95,7 @@ load_file_to_memory(const char *filename, char **result)
   size = ftell(f);
   fseek(f, 0, SEEK_SET);
   *result = (char *)malloc(size+1);
-  if (size != fread(*result, sizeof(char), size, f)) 
+  if (size != (int) fread(*result, sizeof(char), size, f)) 
   { 
     free(*result);
     return -2; // -2 means file reading fail 
@@ -165,10 +165,6 @@ int main(int argc, char** argv)
   int err;                            // error code returned from api calls     
   int* a = NULL; // input pointer
   int* results = NULL; // output pointer
-  unsigned int correct;               // number of correct results returned
-
-  size_t global[2];                   // global domain size for our calculation
-  size_t local[2];                    // local domain size for our calculation
 
   cl_platform_id platform_id;         // platform id
   cl_device_id device_id;             // compute device id 
@@ -183,8 +179,6 @@ int main(int argc, char** argv)
   cl_mem input_a;                     // device memory used for the input array
   //cl_mem input_b;                     // device memory used for the input array
   cl_mem output;                      // device memory used for the output array
-  int inc;
-  double t_start, t_end;
 
   if (argc != 2){
     printf("%s <inputfile>\n", argv[0]);
@@ -304,7 +298,7 @@ int main(int argc, char** argv)
 
   // Create the compute kernel in the program we wish to run
   //
-  kernel = clCreateKernel(program, "mmult", &err);
+  kernel = clCreateKernel(program, "smith_waterman", &err);
   if (!kernel || err != CL_SUCCESS)
   {
     printf("Error: Failed to create compute kernel!\n");
@@ -375,7 +369,6 @@ int main(int argc, char** argv)
   bool broadcastFlag = false;
 
   int packet_buf[PACKET_SIZE];
-  int time_buf[TIME_BUF_SIZE];
 
   while (true) {
     //printf("\n************* Got a new task! *************\n");
@@ -416,7 +409,7 @@ int main(int argc, char** argv)
     int data_size = -1;  // data sent to FPGA (unit: int)
     shmid = packet_buf[0];
     data_size = packet_buf[1];
-    printf("Shmid: %d, Data size (# of int): %d\n", shmid, data_size);
+    //printf("Shmid: %d, Data size (# of int): %d\n", shmid, data_size);
 
     // shared memory
     if((shm_addr = (char *) shmat(shmid, NULL, 0)) == (char *) -1) {
@@ -443,7 +436,7 @@ int main(int argc, char** argv)
       int tmp = *(a+8+i*8+7);
       assert(tmp >=0 && tmp < TOTAL_TASK_NUMS);
     }
-    printf("Task Num: %d\n", taskNum);
+    //printf("Task Num: %d\n", taskNum);
 
     //printf("\nparameter recieved --- \n");
     //Write our data set into the input array in device memory 
@@ -524,11 +517,11 @@ int main(int argc, char** argv)
 
     accTime(&socRecvTime, &timer);
 
-    printf("**********timing begin**********\n");
-    printTimeSpec(socSendTime, "[DEMO] Data sending time");
-    printTimeSpec(socRecvTime, "[DEMO] Data receiving time");
-    printTimeSpec(exeTime, "[DEMO] FPGA execution time");
-    printf("**********timing end**********\n\n");
+    // printf("**********timing begin**********\n");
+    // printTimeSpec(socSendTime, "[DEMO] Data sending time");
+    // printTimeSpec(socRecvTime, "[DEMO] Data receiving time");
+    // printTimeSpec(exeTime, "[DEMO] FPGA execution time");
+    // printf("**********timing end**********\n\n");
   }
     
   close(SocketFD);

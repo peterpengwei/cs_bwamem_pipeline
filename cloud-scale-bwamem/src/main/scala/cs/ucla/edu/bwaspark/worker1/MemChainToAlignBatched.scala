@@ -233,7 +233,6 @@ object MemChainToAlignBatched {
     pipelineUnpack(taskNum, outputData, results, numOfReads)
   }
 
-  /*
   //Run DPs on FPGA
   def runOnFPGAJNI(taskNum: Int, //number of tasks
                    tasks: Array[ExtParam], // task array
@@ -370,7 +369,7 @@ object MemChainToAlignBatched {
     }
   }
 
-
+  /*
   //Run DPs on FPGA
   def runOnFPGA(taskNum: Int, //number of tasks
                 TOTAL_TASK_NUM: Int,
