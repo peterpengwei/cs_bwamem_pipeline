@@ -41,7 +41,7 @@ object BWAMemWorker1Batched {
   val pipeline = SWPipeline.getSingleton()
   if (pipeline.getIsRunning().getAndSet(true) == false) {
     pipeline.execute(null)
-    println("[Pipeline] the only time when the pipeline is initialized")
+    println("[Pipeline] per-thread initialization")
   }
   
   /**

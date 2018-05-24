@@ -189,7 +189,7 @@ object MemChainToAlignBatched {
       results(i).idx = bytesToInt(bufRet, 0 + FPGA_RET_PARAM_NUM * 4 * i)
       results(i).idx = results(i).idx & 0xffffff
       if (results(i).idx < 0 || results(i).idx >= numOfReads) {
-        println("[Pipeline] Invalid idx " + results(i).idx + ", possibly because of accelerator error")
+        //println("[Pipeline] Invalid idx " + results(i).idx + ", possibly because of accelerator error")
         results(i) = null
       }
       else {
@@ -213,23 +213,23 @@ object MemChainToAlignBatched {
                         resultObj: SWUnpackObject,
                         numOfReads: Int
                        ): Unit = {
-    println("[Pipeline] start smith-waterman job processing with threadID: " + threadID)
+    //println("[Pipeline] start smith-waterman job processing with threadID: " + threadID)
 
     val inputData = pipelinePack(taskNum, tasks, threadID)
 
-    println("[Pipline] input data with length: " + inputData.getData().length + " and jobs " + taskNum)
+    //println("[Pipline] input data with length: " + inputData.getData().length + " and jobs " + taskNum)
 
     val sendQueue = pipeline.getSendQueue()
 
     while (sendQueue.offer(inputData) == false) {
     }
 
-    println("[Pipeline] a batch is sent to the pipeline")
+    //println("[Pipeline] a batch is sent to the pipeline")
 
     while (resultObj.getData.get() == null) {
     }
     val outputData: Array[Byte] = resultObj.getData.getAndSet(null)
-    println("[Pipeline] obtained a valid batch of results")
+    //println("[Pipeline] obtained a valid batch of results")
     pipelineUnpack(taskNum, outputData, results, numOfReads)
   }
 
@@ -655,7 +655,7 @@ object MemChainToAlignBatched {
 
     val resultObj: SWUnpackObject = new SWUnpackObject
     var threadID = pipeline.acquireThreadID(resultObj)
-    println("[Pipeline] acquired Thread ID = " + threadID)
+    //println("[Pipeline] acquired Thread ID = " + threadID)
 
     while (!isFinished) {
 
@@ -784,11 +784,11 @@ object MemChainToAlignBatched {
         if (fpgaExtResults(i) != null) {
           var tmpIdx = fpgaExtResults(i).idx
 	  if (tmpIdx < 0 || tmpIdx >= numOfReads) {
-	    println("[Software] idx " + tmpIdx + " out of bound, probably due to software bugs")
+	    //println("[Software] idx " + tmpIdx + " out of bound, probably due to software bugs")
 	    fpgaExtResults(i) = null
 	  }
 	  else if (newRegs(tmpIdx) == null) {
-	    println("[BWAMEM] idx " + tmpIdx + " does not correspond to a valid item")
+	    //println("[BWAMEM] idx " + tmpIdx + " does not correspond to a valid item")
 	  }
 	  else {
             newRegs(tmpIdx).qBeg = fpgaExtResults(i).qBeg

@@ -7,9 +7,7 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketAddress;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -25,6 +23,7 @@ public final class SWPipeline extends Pipeline {
     private AtomicInteger numPackThreads;
     private AtomicBoolean isRunning;
     private int TILE_SIZE;
+
     public SWPipeline(int TILE_SIZE) {
         this.numPackThreads = new AtomicInteger(0);
         this.TILE_SIZE = TILE_SIZE;
@@ -43,7 +42,6 @@ public final class SWPipeline extends Pipeline {
     public AtomicBoolean getIsRunning() {
         return isRunning;
     }
-
 
 
     @Override
@@ -65,7 +63,7 @@ public final class SWPipeline extends Pipeline {
                 }
             }
             byte[] data = ((SWSendObject) obj).getData();
-            logger.info("[Pipeline] Sending data with length " + data.length + ": " + (new String(data)).substring(0, 64));
+            //logger.info("[Pipeline] Sending data with length " + data.length + ": " + (new String(data)).substring(0, 64));
             //BufferedOutputStream out = new BufferedOutputStream(socket.getOutputStream());
             //out.write(data, 0, TILE_SIZE);
             byte[] dataLength = new byte[4];
@@ -98,7 +96,7 @@ public final class SWPipeline extends Pipeline {
                 length -= n;
             }
             //in.read(data);
-            logger.info("Received data with length " + data.length + ": " + (new String(data)).substring(0, 64));
+            //logger.info("Received data with length " + data.length + ": " + (new String(data)).substring(0, 64));
             incoming.close();
             return new SWRecvObject(data);
         } catch (Exception e) {
@@ -125,7 +123,7 @@ public final class SWPipeline extends Pipeline {
 
     @Override
     public Object execute(Object input) {
-        logger.info("[Pipeline] pipeline initialization begins");
+        //logger.info("[Pipeline] pipeline initialization begins");
         long overallStartTime = System.nanoTime();
 
         Runnable sender = () -> {
@@ -134,11 +132,11 @@ public final class SWPipeline extends Pipeline {
                 while (!done) {
                     SWSendObject obj;
                     while ((obj = (SWSendObject) getSendQueue().poll()) == null) ;
-                    logger.info("[Pipeline] obtained a valid input from the send queue");
+                    //logger.info("[Pipeline] obtained a valid input from the send queue");
                     if (obj.getData() == null) {
                         //done = true;
                     } else {
-                        logger.info("[Pipeline] the size of the batch is " + obj.getData().length);
+                        //logger.info("[Pipeline] the size of the batch is " + obj.getData().length);
                         send(obj);
                     }
                 }
@@ -177,10 +175,12 @@ public final class SWPipeline extends Pipeline {
                     if (curObj.getData() == null) done = true;
                     else {
                         int curThreadID = ((int) curObj.getData()[3]) & 0xff;
-                        logger.info("[Pipeline] Received results belong to Thread " + curThreadID);
-                        logger.info("[Pipeline] Hash table size = " + unpackObjects.size());
+                        //logger.info("[Pipeline] Received results belong to Thread " + curThreadID);
+                        //logger.info("[Pipeline] Hash table size = " + unpackObjects.size());
                         AtomicReference<byte[]> curReference = unpackObjects.get(curThreadID).getData();
-                        while (curReference.compareAndSet(null, curObj.getData())) ;
+                        while (curReference.get() != null) ;
+                        curReference.set(curObj.getData());
+                        //while (curReference.compareAndSet(null, curObj.getData())) ;
                     }
                 }
             } catch (Exception e) {
@@ -195,8 +195,6 @@ public final class SWPipeline extends Pipeline {
         recvThread.start();
         Thread unpackThread = new Thread(unpacker);
         unpackThread.start();
-        //Thread mergeThread = new Thread(merger);
-        //mergeThread.start();
 
         return null;
 
@@ -205,7 +203,6 @@ public final class SWPipeline extends Pipeline {
             sendThread.join();
             recvThread.join();
             unpackThread.join();
-            //mergeThread.join();
         } catch (Exception e) {
             logger.severe("Caught exception: " + e);
             e.printStackTrace();
@@ -213,13 +210,8 @@ public final class SWPipeline extends Pipeline {
 
         long overallTime = System.nanoTime() - overallStartTime;
         System.out.println("[Overall] " + overallTime / 1.0e9);
-        System.out.println("[FPGA Jobs] " + numFPGAJobs);
-        //return stringBuilder.toString();
-        System.out.println();
         return null;
         */
-
     }
-
 }
 
