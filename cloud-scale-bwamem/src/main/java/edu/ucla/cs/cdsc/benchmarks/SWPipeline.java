@@ -152,16 +152,11 @@ public final class SWPipeline extends Pipeline {
                     //logger.info("numJobs = " + numJobs.get() + ", numPendingJobs = " + numPendingJobs.get());
                     SWRecvObject curObj = (SWRecvObject) receive(in);
                     if (curObj.getData() == null) done = true;
-                    /*
                     else {
                         byte curThreadID = curObj.getData()[3];
                         AtomicReference<byte[]> curReference = unpackObjHash.get(curThreadID).getData();
                         while (curReference.get() != null) ;
                         curReference.set(curObj.getData());
-                    }
-                    */
-                    else {
-                        while (getRecvQueue().offer(curObj) == false) ;
                     }
                 }
             } catch (Exception e) {
@@ -170,32 +165,10 @@ public final class SWPipeline extends Pipeline {
             }
         };
 
-        Runnable unpacker = () -> {
-            try {
-                boolean done = false;
-                while (!done) {
-                    SWRecvObject obj;
-                    while ((obj = (SWRecvObject) getRecvQueue().poll()) == null) ;
-                    if (obj.getData() == null) done = true;
-                    else {
-                        byte curThreadID = obj.getData()[3];
-                        AtomicReference<byte[]> curReference = unpackObjHash.get(curThreadID).getData();
-                        while (curReference.get() != null) ;
-                        curReference.set(obj.getData());
-                    }
-                }
-            } catch (Exception e) {
-                logger.severe("[Unpacker] Caught exception: " + e);
-                e.printStackTrace();
-            }
-        };
-
         Thread sendThread = new Thread(sender);
         sendThread.start();
         Thread recvThread = new Thread(receiver);
         recvThread.start();
-        Thread unpackThread = new Thread(unpacker);
-        unpackThread.start();
 
         return null;
 
@@ -203,7 +176,6 @@ public final class SWPipeline extends Pipeline {
         try {
             sendThread.join();
             recvThread.join();
-            unpackThread.join();
         } catch (Exception e) {
             logger.severe("Caught exception: " + e);
             e.printStackTrace();
