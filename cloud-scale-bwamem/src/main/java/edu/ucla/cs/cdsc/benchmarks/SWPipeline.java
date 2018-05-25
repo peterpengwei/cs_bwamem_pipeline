@@ -86,8 +86,9 @@ public final class SWPipeline extends Pipeline {
     public RecvObject receive(InputStream in) {
         try {
             byte[] dataSizeBytes = new byte[4];
-            in.read(dataSizeBytes);
+            in.read(dataSizeBytes, 0, 4);
             int overallSize = ByteBuffer.wrap(dataSizeBytes).order(ByteOrder.LITTLE_ENDIAN).getInt();
+            logger.info("Overall size is " + overallSize);
             byte[] data = new byte[overallSize];
             //BufferedInputStream in = new BufferedInputStream(incoming.getInputStream());
             //in.read(data, 0, TILE_SIZE);
