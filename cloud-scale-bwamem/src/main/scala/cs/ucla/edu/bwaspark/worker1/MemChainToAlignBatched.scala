@@ -171,35 +171,25 @@ object MemChainToAlignBatched {
                      results: Array[ExtRet],
                      numOfReads: Int
                     ) {
-    def bytesToInt(buffer: Array[Byte], idx: Int): Int = {
-      val byteBuffer: ByteBuffer = ByteBuffer.wrap(buffer, idx, 4)
-      byteBuffer.order(ByteOrder.LITTLE_ENDIAN)
-      return byteBuffer.getInt()
-    }
-
-    def bytesToShort(buffer: Array[Byte], idx: Int): Short = {
-      val byteBuffer: ByteBuffer = ByteBuffer.wrap(buffer, idx, 2)
-      byteBuffer.order(ByteOrder.LITTLE_ENDIAN)
-      return byteBuffer.getShort()
-    }
-
+    val byteBuffer = ByteBuffer.wrap(bufRet).order(ByteOrder.LITTLE_ENDIAN)
     var i = 0
     while (i < taskNum) {
-      if (results(i) == null) results(i) = new ExtRet
-      results(i).idx = bytesToInt(bufRet, 0 + FPGA_RET_PARAM_NUM * 4 * i)
-      results(i).idx = results(i).idx & 0xffffff
-      if (results(i).idx < 0 || results(i).idx >= numOfReads) {
+      var curIdx = byteBuffer.getInt & 0xffffff
+      if (curIdx < 0 || curIdx >= numOfReads) {
         //println("[Pipeline] Invalid idx " + results(i).idx + ", possibly because of accelerator error")
-        results(i) = null
+        //results(i) = null
       }
       else {
-        results(i).qBeg = bytesToShort(bufRet, 4 + FPGA_RET_PARAM_NUM * 4 * i)
-        results(i).qEnd = bytesToShort(bufRet, 6 + FPGA_RET_PARAM_NUM * 4 * i)
-        results(i).rBeg = bytesToShort(bufRet, 8 + FPGA_RET_PARAM_NUM * 4 * i)
-        results(i).rEnd = bytesToShort(bufRet, 10 + FPGA_RET_PARAM_NUM * 4 * i)
-        results(i).score = bytesToShort(bufRet, 12 + FPGA_RET_PARAM_NUM * 4 * i)
-        results(i).trueScore = bytesToShort(bufRet, 14 + FPGA_RET_PARAM_NUM * 4 * i)
-        results(i).width = bytesToShort(bufRet, 16 + FPGA_RET_PARAM_NUM * 4 * i)
+        if (results(i) == null) results(i) = new ExtRet
+        results(i).idx = curIdx
+        results(i).qBeg = byteBuffer.getShort
+        results(i).qEnd = byteBuffer.getShort
+        results(i).rBeg = byteBuffer.getShort
+        results(i).rEnd = byteBuffer.getShort
+        results(i).score = byteBuffer.getShort
+        results(i).trueScore = byteBuffer.getShort
+        results(i).width = byteBuffer.getShort
+        byteBuffer.getShort
       }
       i = i + 1
     }
@@ -226,9 +216,14 @@ object MemChainToAlignBatched {
 
     //println("[Pipeline] a batch is sent to the pipeline")
 
-    while (resultObj.getData.get() == null) {
+    var flag = false
+    var outputData: Array[Byte] = null
+    while (flag == false) {
+      outputData = resultObj.getData.get()
+      if (outputData != null) flag = true
     }
-    val outputData: Array[Byte] = resultObj.getData.getAndSet(null)
+    resultObj.getData.set(null)
+    //val outputData: Array[Byte] = resultObj.getData.getAndSet(null)
     //println("[Pipeline] obtained a valid batch of results")
     pipelineUnpack(taskNum, outputData, results, numOfReads)
   }
@@ -649,10 +644,7 @@ object MemChainToAlignBatched {
     var taskIdx = 0
 
     val pipeline = SWPipeline.getSingleton
-    if (pipeline == null)
-      println("pipeline singleton refers to a null pointer")
-
-    var threadID = pipeline.acquireThreadID()
+    val threadID = pipeline.acquireThreadID()
     val resultObj = pipeline.getUnpackObjects().get(threadID)
 
     //println("[Pipeline] acquired Thread ID = " + threadID)

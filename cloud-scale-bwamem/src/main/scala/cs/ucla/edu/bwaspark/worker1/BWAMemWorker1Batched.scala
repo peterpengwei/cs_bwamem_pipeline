@@ -37,15 +37,7 @@ import edu.ucla.cs.cdsc.benchmarks.SWPipeline
 //1)for each read, generate all the possible seed chains
 //2)using SW algorithm to extend each chain to all possible aligns
 object BWAMemWorker1Batched {
-
-  val pipeline = SWPipeline.getSingleton()
-  println("[Pipeline] Verify that the pipeline is only initialized once")
-  if (pipeline.getIsRunning().get() == false) {
-    if (pipeline.getIsRunning().getAndSet(true) == false) {
-      pipeline.execute(null)
-      println("[Pipeline] per-thread initialization")
-    }
-  }
+  SWPipeline.getSingleton.execute(null)
 
   /**
     * Perform BWAMEM worker1 function for single-end alignment

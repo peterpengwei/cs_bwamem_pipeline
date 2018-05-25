@@ -21,7 +21,6 @@ public final class SWPipeline extends Pipeline {
     private static final SWPipeline singleton = new SWPipeline(1 << 21);
     private HashMap<Integer, SWUnpackObject> unpackObjects;
     private AtomicInteger numPackThreads;
-    private AtomicBoolean isRunning;
     private int TILE_SIZE;
 
     public SWPipeline(int TILE_SIZE) {
@@ -31,7 +30,6 @@ public final class SWPipeline extends Pipeline {
         for (int i=0; i<256; i++) {
             this.unpackObjects.put(i, new SWUnpackObject());
         }
-        this.isRunning = new AtomicBoolean(false);
     }
 
     public static SWPipeline getSingleton() {
@@ -40,10 +38,6 @@ public final class SWPipeline extends Pipeline {
 
     public HashMap<Integer, SWUnpackObject> getUnpackObjects() {
         return unpackObjects;
-    }
-
-    public AtomicBoolean getIsRunning() {
-        return isRunning;
     }
 
 
