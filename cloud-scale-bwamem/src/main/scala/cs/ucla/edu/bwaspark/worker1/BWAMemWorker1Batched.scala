@@ -39,6 +39,7 @@ import edu.ucla.cs.cdsc.benchmarks.SWPipeline
 object BWAMemWorker1Batched {
 
   val pipeline = SWPipeline.getSingleton()
+  println("[Pipeline] Verify that the pipeline is only initialized once")
   if (pipeline.getIsRunning().get() == false) {
     if (pipeline.getIsRunning().getAndSet(true) == false) {
       pipeline.execute(null)

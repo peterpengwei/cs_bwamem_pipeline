@@ -18,7 +18,7 @@ import java.util.logging.Logger;
  */
 public final class SWPipeline extends Pipeline {
     private static final Logger logger = Logger.getLogger(SWPipeline.class.getName());
-    private static final SWPipeline singleton = new SWPipeline(1 << 22);
+    private static final SWPipeline singleton = new SWPipeline(1 << 21);
     private HashMap<Integer, SWUnpackObject> unpackObjects;
     private AtomicInteger numPackThreads;
     private AtomicBoolean isRunning;
