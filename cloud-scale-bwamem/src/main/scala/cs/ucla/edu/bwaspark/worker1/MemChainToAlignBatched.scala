@@ -48,7 +48,7 @@ object MemChainToAlignBatched {
 
   def pipelinePack(taskNum: Int, //number of tasks
                    tasks: Array[ExtParam],
-                   threadID: Int
+                   threadID: Long
                   ): SWSendObject = {
     def int2ByteArray(arr: Array[Byte], idx: Int, num: Int): Int = {
       arr(idx) = (num & 0xff).toByte
@@ -102,7 +102,7 @@ object MemChainToAlignBatched {
       buf1Idx = short2ByteArray(buf1, buf1Idx, leftMaxDel.toShort)
       buf1Idx = short2ByteArray(buf1, buf1Idx, rightMaxIns.toShort)
       buf1Idx = short2ByteArray(buf1, buf1Idx, rightMaxDel.toShort)
-      buf1Idx = int2ByteArray(buf1, buf1Idx, tasks(i).idx | (threadID << 24))
+      buf1Idx = int2ByteArray(buf1, buf1Idx, tasks(i).idx | (threadID.toInt << 24))
 
       i = i + 1
     }
@@ -199,7 +199,7 @@ object MemChainToAlignBatched {
                         tasks: Array[ExtParam],
                         results: Array[ExtRet],
                         pipeline: SWPipeline,
-                        threadID: Int,
+                        threadID: Long,
                         resultObj: SWUnpackObject,
                         numOfReads: Int
                        ): Unit = {
