@@ -19,6 +19,7 @@
 package cs.ucla.edu.bwaspark.worker1
 
 import java.nio.{ByteBuffer, ByteOrder}
+import java.util.concurrent.atomic.AtomicReference
 
 import cs.ucla.edu.bwaspark.datatype._
 import cs.ucla.edu.bwaspark.util.BNTSeqUtil._
@@ -48,19 +49,19 @@ object MemChainToAlignBatched {
 
   def pipelinePack(taskNum: Int, //number of tasks
                    tasks: Array[ExtParam],
-                   threadID: Long
+                   threadID: Byte
                   ): SWSendObject = {
     def int2ByteArray(arr: Array[Byte], idx: Int, num: Int): Int = {
-      arr(idx) = (num & 0xff).toByte
-      arr(idx + 1) = ((num >> 8) & 0xff).toByte
-      arr(idx + 2) = ((num >> 16) & 0xff).toByte
-      arr(idx + 3) = ((num >> 24) & 0xff).toByte
+      arr(idx) = (num).toByte
+      arr(idx + 1) = ((num >> 8)).toByte
+      arr(idx + 2) = ((num >> 16)).toByte
+      arr(idx + 3) = ((num >> 24)).toByte
       idx + 4
     }
 
     def short2ByteArray(arr: Array[Byte], idx: Int, num: Short): Int = {
-      arr(idx) = (num & 0xff).toByte
-      arr(idx + 1) = ((num >> 8) & 0xff).toByte
+      arr(idx) = (num).toByte
+      arr(idx + 1) = ((num >> 8)).toByte
       idx + 2
     }
 
@@ -199,8 +200,8 @@ object MemChainToAlignBatched {
                         tasks: Array[ExtParam],
                         results: Array[ExtRet],
                         pipeline: SWPipeline,
-                        threadID: Long,
-                        resultObj: SWUnpackObject,
+                        threadID: Byte,
+                        resultObj: AtomicReference[Array[Byte]],
                         numOfReads: Int
                        ): Unit = {
     //println("[Pipeline] start smith-waterman job processing with threadID: " + threadID)
@@ -219,10 +220,10 @@ object MemChainToAlignBatched {
     var flag = false
     var outputData: Array[Byte] = null
     while (flag == false) {
-      outputData = resultObj.getData.get()
+      outputData = resultObj.get()
       if (outputData != null) flag = true
     }
-    resultObj.getData.set(null)
+    resultObj.set(null)
     //val outputData: Array[Byte] = resultObj.getData.getAndSet(null)
     //println("[Pipeline] obtained a valid batch of results")
     pipelineUnpack(taskNum, outputData, results, numOfReads)
@@ -643,9 +644,9 @@ object MemChainToAlignBatched {
     var fpgaExtResults = new Array[ExtRet](numOfReads)
     var taskIdx = 0
 
-    val pipeline = SWPipeline.getSingleton
-    val threadID = Thread.currentThread().getId & 0xff
-    val resultObj = pipeline.getResultObj(threadID)
+    val pipeline = SWPipeline.singleton
+    val threadID = Thread.currentThread().getId.toByte
+    val resultObj = pipeline.getResultObj(threadID).getData
 
     //println("[Pipeline] acquired Thread ID = " + threadID)
 
@@ -777,7 +778,7 @@ object MemChainToAlignBatched {
           var tmpIdx = fpgaExtResults(i).idx
           if (tmpIdx < 0 || tmpIdx >= numOfReads) {
             //println("[Software] idx " + tmpIdx + " out of bound, probably due to software bugs")
-            fpgaExtResults(i) = null
+            //fpgaExtResults(i) = null
           }
           else if (newRegs(tmpIdx) == null) {
             //println("[BWAMEM] idx " + tmpIdx + " does not correspond to a valid item")

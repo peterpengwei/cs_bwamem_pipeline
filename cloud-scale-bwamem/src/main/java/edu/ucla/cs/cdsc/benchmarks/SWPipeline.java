@@ -16,23 +16,20 @@ import java.util.logging.Logger;
  */
 public final class SWPipeline extends Pipeline {
     private static final Logger logger = Logger.getLogger(SWPipeline.class.getName());
-    private static final SWPipeline singleton = new SWPipeline(1 << 21);
-    private HashMap<Long, SWUnpackObject> unpackObjHash;
-    private int TILE_SIZE;
+    //private static final SWPipeline singleton = new SWPipeline(1 << 21);
+    public static final SWPipeline singleton = new SWPipeline();
+    private HashMap<Byte, SWUnpackObject> unpackObjHash;
+    //private int TILE_SIZE;
 
-    public SWPipeline(int TILE_SIZE) {
-        this.TILE_SIZE = TILE_SIZE;
-        this.unpackObjHash = new HashMap<>();
+    //public SWPipeline(int TILE_SIZE) {
+    public SWPipeline() {
+        //this.TILE_SIZE = TILE_SIZE;
+        this.unpackObjHash = new HashMap<>(256);
     }
 
-    public static SWPipeline getSingleton() {
-        return singleton;
-    }
-
-    public HashMap<Long, SWUnpackObject> getUnpackObjHash() {
-        return unpackObjHash;
-    }
-
+    //public static SWPipeline getSingleton() {
+    //    return singleton;
+    //}
 
     @Override
     public SendObject pack(PackObject obj) {
@@ -58,13 +55,13 @@ public final class SWPipeline extends Pipeline {
             //logger.info("[Pipeline] Sending data with length " + data.length + ": " + (new String(data)).substring(0, 64));
             //BufferedOutputStream out = new BufferedOutputStream(socket.getOutputStream());
             //out.write(data, 0, TILE_SIZE);
-            //byte[] dataLength = new byte[4];
-            //int batchSize = data.length;
-            //dataLength[3] = (byte) ((batchSize >> 24) & 0xff);
-            //dataLength[2] = (byte) ((batchSize >> 16) & 0xff);
-            //dataLength[1] = (byte) ((batchSize >> 8) & 0xff);
-            //dataLength[0] = (byte) ((batchSize >> 0) & 0xff);
-            socket.getOutputStream().write(ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt(data.length).array());
+            byte[] dataLength = new byte[4];
+            int batchSize = data.length;
+            dataLength[3] = (byte) ((batchSize >> 24) & 0xff);
+            dataLength[2] = (byte) ((batchSize >> 16) & 0xff);
+            dataLength[1] = (byte) ((batchSize >> 8) & 0xff);
+            dataLength[0] = (byte) ((batchSize >> 0) & 0xff);
+            socket.getOutputStream().write(dataLength);
             socket.getOutputStream().write(data);
             //socket.close();
         } catch (Exception e) {
@@ -107,7 +104,7 @@ public final class SWPipeline extends Pipeline {
         return null;
     }
 
-    public SWUnpackObject getResultObj(Long threadID) {
+    public SWUnpackObject getResultObj(byte threadID) {
         SWUnpackObject obj = unpackObjHash.get(threadID);
         if (obj == null) {
             obj = new SWUnpackObject();
@@ -119,7 +116,7 @@ public final class SWPipeline extends Pipeline {
     @Override
     public Object execute(Object input) {
         //logger.info("[Pipeline] pipeline initialization begins");
-        long overallStartTime = System.nanoTime();
+        //long overallStartTime = System.nanoTime();
 
         Runnable sender = () -> {
             try (Socket socket = new Socket("127.0.0.1", 6070)) {
@@ -129,7 +126,7 @@ public final class SWPipeline extends Pipeline {
                     while ((obj = (SWSendObject) getSendQueue().poll()) == null) ;
                     //logger.info("[Pipeline] obtained a valid input from the send queue");
                     if (obj.getData() == null) {
-                        //done = true;
+                        done = true;
                     } else {
                         //logger.info("[Pipeline] the size of the batch is " + obj.getData().length);
                         send(obj, socket);
@@ -147,7 +144,7 @@ public final class SWPipeline extends Pipeline {
                 //server.bind(new InetSocketAddress(9520));
 
                 Socket incoming = server.accept();
-                logger.info("Java receiver is connected by the C scatter");
+                //logger.info("Java receiver is connected by the C scatter");
                 InputStream in = incoming.getInputStream();
 
                 boolean done = false;
@@ -156,7 +153,7 @@ public final class SWPipeline extends Pipeline {
                     SWRecvObject curObj = (SWRecvObject) receive(in);
                     if (curObj.getData() == null) done = true;
                     else {
-                        long curThreadID = ((long) curObj.getData()[3]) & 0xff;
+                        byte curThreadID = curObj.getData()[3];
                         AtomicReference<byte[]> curReference = unpackObjHash.get(curThreadID).getData();
                         while (curReference.get() != null) ;
                         curReference.set(curObj.getData());

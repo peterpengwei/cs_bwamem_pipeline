@@ -37,7 +37,7 @@ import edu.ucla.cs.cdsc.benchmarks.SWPipeline
 //1)for each read, generate all the possible seed chains
 //2)using SW algorithm to extend each chain to all possible aligns
 object BWAMemWorker1Batched {
-  SWPipeline.getSingleton.execute(null)
+  SWPipeline.singleton.execute(null)
 
   /**
     * Perform BWAMEM worker1 function for single-end alignment
