@@ -4,6 +4,7 @@ import jdk.nashorn.internal.ir.Block;
 import org.jctools.queues.*;
 import org.jctools.queues.SpscLinkedQueue;
 
+import java.io.InputStream;
 import java.io.RandomAccessFile;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -46,7 +47,7 @@ public abstract class Pipeline {
 
     public abstract void send(SendObject obj, Socket socket);
 
-    public abstract RecvObject receive(Socket incoming);
+    public abstract RecvObject receive(InputStream in);
 
     public abstract UnpackObject unpack(RecvObject obj);
 

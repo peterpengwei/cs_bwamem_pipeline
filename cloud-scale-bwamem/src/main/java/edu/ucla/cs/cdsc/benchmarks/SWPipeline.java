@@ -81,13 +81,13 @@ public final class SWPipeline extends Pipeline {
     }
 
     @Override
-    public RecvObject receive(Socket incoming) {
+    public RecvObject receive(InputStream in) {
         try {
             byte[] data = new byte[TILE_SIZE];
             //BufferedInputStream in = new BufferedInputStream(incoming.getInputStream());
             //in.read(data, 0, TILE_SIZE);
             int n;
-            InputStream in = incoming.getInputStream();
+            //InputStream in = incoming.getInputStream();
             int offset = 0, length = TILE_SIZE;
             while ((n = in.read(data, offset, length)) > 0) {
                 if (n == length) break;
@@ -95,7 +95,7 @@ public final class SWPipeline extends Pipeline {
                 length -= n;
             }
             //in.read(data);
-            //logger.info("Received data with length " + offset);
+            logger.info("Received data with length " + offset);
             //incoming.close();
             return new SWRecvObject(data);
         } catch (Exception e) {
@@ -150,11 +150,13 @@ public final class SWPipeline extends Pipeline {
                 //server.bind(new InetSocketAddress(9520));
 
                 Socket incoming = server.accept();
+                logger.info("Java receiver is connected by the C scatter");
+                InputStream in = incoming.getInputStream();
 
                 boolean done = false;
                 while (!done) {
                     //logger.info("numJobs = " + numJobs.get() + ", numPendingJobs = " + numPendingJobs.get());
-                    SWRecvObject curObj = (SWRecvObject) receive(incoming);
+                    SWRecvObject curObj = (SWRecvObject) receive(in);
                     if (curObj.getData() == null) done = true;
                     else {
                         int curThreadID = ((int) curObj.getData()[3]) & 0xff;
