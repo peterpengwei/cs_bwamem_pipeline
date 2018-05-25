@@ -46,7 +46,7 @@ public abstract class Pipeline {
 
     public abstract void send(SendObject obj, Socket socket);
 
-    public abstract RecvObject receive(ServerSocket server);
+    public abstract RecvObject receive(Socket incoming);
 
     public abstract UnpackObject unpack(RecvObject obj);
 

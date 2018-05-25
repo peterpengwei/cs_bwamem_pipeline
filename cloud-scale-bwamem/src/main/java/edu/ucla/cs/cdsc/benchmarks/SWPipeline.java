@@ -81,8 +81,8 @@ public final class SWPipeline extends Pipeline {
     }
 
     @Override
-    public RecvObject receive(ServerSocket server) {
-        try (Socket incoming = server.accept()) {
+    public RecvObject receive(Socket incoming) {
+        try {
             byte[] data = new byte[TILE_SIZE];
             //BufferedInputStream in = new BufferedInputStream(incoming.getInputStream());
             //in.read(data, 0, TILE_SIZE);
@@ -96,7 +96,7 @@ public final class SWPipeline extends Pipeline {
             }
             //in.read(data);
             //logger.info("Received data with length " + offset);
-            incoming.close();
+            //incoming.close();
             return new SWRecvObject(data);
         } catch (Exception e) {
             logger.severe("[Recv] Caught exception: " + e);
@@ -145,14 +145,16 @@ public final class SWPipeline extends Pipeline {
         };
 
         Runnable receiver = () -> {
-            try (ServerSocket server = new ServerSocket()) {
-                server.setReuseAddress(true);
-                server.bind(new InetSocketAddress(9520));
+            try (ServerSocket server = new ServerSocket(9520)) {
+                //server.setReuseAddress(true);
+                //server.bind(new InetSocketAddress(9520));
+
+                Socket incoming = server.accept();
 
                 boolean done = false;
                 while (!done) {
                     //logger.info("numJobs = " + numJobs.get() + ", numPendingJobs = " + numPendingJobs.get());
-                    SWRecvObject curObj = (SWRecvObject) receive(server);
+                    SWRecvObject curObj = (SWRecvObject) receive(incoming);
                     if (curObj.getData() == null) done = true;
                     else {
                         int curThreadID = ((int) curObj.getData()[3]) & 0xff;
