@@ -3,15 +3,11 @@ package edu.ucla.cs.cdsc.benchmarks;
 import edu.ucla.cs.cdsc.pipeline.*;
 
 import java.io.InputStream;
-import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.HashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
 
@@ -21,25 +17,20 @@ import java.util.logging.Logger;
 public final class SWPipeline extends Pipeline {
     private static final Logger logger = Logger.getLogger(SWPipeline.class.getName());
     private static final SWPipeline singleton = new SWPipeline(1 << 21);
-    private HashMap<Integer, SWUnpackObject> unpackObjects;
-    private AtomicInteger numPackThreads;
+    private HashMap<Long, SWUnpackObject> unpackObjHash;
     private int TILE_SIZE;
 
     public SWPipeline(int TILE_SIZE) {
-        this.numPackThreads = new AtomicInteger(0);
         this.TILE_SIZE = TILE_SIZE;
-        this.unpackObjects = new HashMap<>(256);
-        for (int i = 0; i < 256; i++) {
-            this.unpackObjects.put(i, new SWUnpackObject());
-        }
+        this.unpackObjHash = new HashMap<>();
     }
 
     public static SWPipeline getSingleton() {
         return singleton;
     }
 
-    public HashMap<Integer, SWUnpackObject> getUnpackObjects() {
-        return unpackObjects;
+    public HashMap<Long, SWUnpackObject> getUnpackObjHash() {
+        return unpackObjHash;
     }
 
 
@@ -67,13 +58,13 @@ public final class SWPipeline extends Pipeline {
             //logger.info("[Pipeline] Sending data with length " + data.length + ": " + (new String(data)).substring(0, 64));
             //BufferedOutputStream out = new BufferedOutputStream(socket.getOutputStream());
             //out.write(data, 0, TILE_SIZE);
-            byte[] dataLength = new byte[4];
-            int batchSize = data.length;
-            dataLength[3] = (byte) ((batchSize >> 24) & 0xff);
-            dataLength[2] = (byte) ((batchSize >> 16) & 0xff);
-            dataLength[1] = (byte) ((batchSize >> 8) & 0xff);
-            dataLength[0] = (byte) ((batchSize >> 0) & 0xff);
-            socket.getOutputStream().write(dataLength);
+            //byte[] dataLength = new byte[4];
+            //int batchSize = data.length;
+            //dataLength[3] = (byte) ((batchSize >> 24) & 0xff);
+            //dataLength[2] = (byte) ((batchSize >> 16) & 0xff);
+            //dataLength[1] = (byte) ((batchSize >> 8) & 0xff);
+            //dataLength[0] = (byte) ((batchSize >> 0) & 0xff);
+            socket.getOutputStream().write(ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt(data.length).array());
             socket.getOutputStream().write(data);
             //socket.close();
         } catch (Exception e) {
@@ -116,13 +107,13 @@ public final class SWPipeline extends Pipeline {
         return null;
     }
 
-    public int acquireThreadID() {
-        int threadID = (numPackThreads.getAndIncrement()) & 0xff;
-        return threadID;
-    }
-
-    public void releaseThreadID(int id) {
-        unpackObjects.remove(id);
+    public SWUnpackObject getResultObj(Long threadID) {
+        SWUnpackObject obj = unpackObjHash.get(threadID);
+        if (obj == null) {
+            obj = new SWUnpackObject();
+            unpackObjHash.put(threadID, obj);
+        }
+        return obj;
     }
 
     @Override
@@ -165,8 +156,8 @@ public final class SWPipeline extends Pipeline {
                     SWRecvObject curObj = (SWRecvObject) receive(in);
                     if (curObj.getData() == null) done = true;
                     else {
-                        int curThreadID = ((int) curObj.getData()[3]) & 0xff;
-                        AtomicReference<byte[]> curReference = unpackObjects.get(curThreadID).getData();
+                        long curThreadID = ((long) curObj.getData()[3]) & 0xff;
+                        AtomicReference<byte[]> curReference = unpackObjHash.get(curThreadID).getData();
                         while (curReference.get() != null) ;
                         curReference.set(curObj.getData());
                     }
