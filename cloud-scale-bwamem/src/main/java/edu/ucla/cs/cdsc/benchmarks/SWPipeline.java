@@ -29,7 +29,7 @@ public final class SWPipeline extends Pipeline {
         this.numPackThreads = new AtomicInteger(0);
         this.TILE_SIZE = TILE_SIZE;
         this.unpackObjects = new HashMap<>(256);
-        for (int i=0; i<256; i++) {
+        for (int i = 0; i < 256; i++) {
             this.unpackObjects.put(i, new SWUnpackObject());
         }
     }
@@ -87,8 +87,7 @@ public final class SWPipeline extends Pipeline {
         try {
             byte[] dataSizeBytes = new byte[4];
             in.read(dataSizeBytes, 0, 4);
-            int overallSize = ByteBuffer.wrap(dataSizeBytes).order(ByteOrder.LITTLE_ENDIAN).getInt(0);
-            logger.info("Overall size is " + overallSize);
+            int overallSize = ByteBuffer.wrap(dataSizeBytes).order(ByteOrder.LITTLE_ENDIAN).getInt();
             //logger.info("Character between two writes are: " + in.read());
             byte[] data = new byte[overallSize];
             //BufferedInputStream in = new BufferedInputStream(incoming.getInputStream());
@@ -96,14 +95,13 @@ public final class SWPipeline extends Pipeline {
             int n;
             //InputStream in = incoming.getInputStream();
             int offset = 0, length = overallSize;
-            while ((n = in.read(data, offset, length)) >= 0) {
-                logger.info("Received data piece with length " + n);
+            while ((n = in.read(data, offset, length)) > 0) {
                 if (n == length) break;
                 offset += n;
                 length -= n;
             }
             //in.read(data);
-            logger.info("Received data with length " + offset);
+            //logger.info("Received data with length " + offset);
             //incoming.close();
             return new SWRecvObject(data);
         } catch (Exception e) {
