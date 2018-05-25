@@ -6,6 +6,7 @@ import org.jctools.queues.SpscLinkedQueue;
 
 import java.io.RandomAccessFile;
 import java.net.ServerSocket;
+import java.net.Socket;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -43,7 +44,7 @@ public abstract class Pipeline {
 
     public abstract SendObject pack(PackObject obj);
 
-    public abstract void send(SendObject obj);
+    public abstract void send(SendObject obj, Socket socket);
 
     public abstract RecvObject receive(ServerSocket server);
 

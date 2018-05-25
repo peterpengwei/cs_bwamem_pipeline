@@ -47,10 +47,11 @@ public final class SWPipeline extends Pipeline {
     }
 
     @Override
-    public void send(SendObject obj) {
+    public void send(SendObject obj, Socket socket) {
         try {
-            Socket socket = new Socket();
-            SocketAddress address = new InetSocketAddress("127.0.0.1", 6070);
+            //Socket socket = new Socket();
+            //SocketAddress address = new InetSocketAddress("127.0.0.1", 6070);
+            /*
             while (true) {
                 try {
                     socket.connect(address);
@@ -59,6 +60,7 @@ public final class SWPipeline extends Pipeline {
                     logger.warning("Connection failed, try it again");
                 }
             }
+            */
             byte[] data = ((SWSendObject) obj).getData();
             //logger.info("[Pipeline] Sending data with length " + data.length + ": " + (new String(data)).substring(0, 64));
             //BufferedOutputStream out = new BufferedOutputStream(socket.getOutputStream());
@@ -71,7 +73,7 @@ public final class SWPipeline extends Pipeline {
             dataLength[0] = (byte) ((batchSize >> 0) & 0xff);
             socket.getOutputStream().write(dataLength);
             socket.getOutputStream().write(data);
-            socket.close();
+            //socket.close();
         } catch (Exception e) {
             logger.severe("[Send] Caught exception: " + e);
             e.printStackTrace();
@@ -123,7 +125,7 @@ public final class SWPipeline extends Pipeline {
         long overallStartTime = System.nanoTime();
 
         Runnable sender = () -> {
-            try {
+            try (Socket socket = new Socket("127.0.0.1", 6070)) {
                 boolean done = false;
                 while (!done) {
                     SWSendObject obj;
@@ -133,7 +135,7 @@ public final class SWPipeline extends Pipeline {
                         //done = true;
                     } else {
                         //logger.info("[Pipeline] the size of the batch is " + obj.getData().length);
-                        send(obj);
+                        send(obj, socket);
                     }
                 }
             } catch (Exception e) {
