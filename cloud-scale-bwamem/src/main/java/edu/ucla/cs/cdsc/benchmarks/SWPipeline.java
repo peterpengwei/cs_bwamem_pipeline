@@ -85,11 +85,12 @@ public final class SWPipeline extends Pipeline {
     @Override
     public RecvObject receive(InputStream in) {
         try {
-            byte[] dataSizeBytes = new byte[4+1];
-            in.read(dataSizeBytes, 0, 4+1);
+            byte[] dataSizeBytes = new byte[4];
+            in.read(dataSizeBytes, 0, 4);
             int overallSize = ByteBuffer.wrap(dataSizeBytes).order(ByteOrder.LITTLE_ENDIAN).getInt(0);
             logger.info("Overall size is " + overallSize);
-            byte[] data = new byte[overallSize+1];
+            logger.info("Character between two writes are: " + in.read());
+            byte[] data = new byte[overallSize];
             //BufferedInputStream in = new BufferedInputStream(incoming.getInputStream());
             //in.read(data, 0, TILE_SIZE);
             int n;
