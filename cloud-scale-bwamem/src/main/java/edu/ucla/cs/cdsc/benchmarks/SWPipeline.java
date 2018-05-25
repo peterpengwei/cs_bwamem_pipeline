@@ -7,6 +7,8 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketAddress;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -83,12 +85,15 @@ public final class SWPipeline extends Pipeline {
     @Override
     public RecvObject receive(InputStream in) {
         try {
-            byte[] data = new byte[TILE_SIZE];
+            byte[] dataSizeBytes = new byte[4];
+            in.read(dataSizeBytes);
+            int overallSize = ByteBuffer.wrap(dataSizeBytes).order(ByteOrder.LITTLE_ENDIAN).getInt();
+            byte[] data = new byte[overallSize];
             //BufferedInputStream in = new BufferedInputStream(incoming.getInputStream());
             //in.read(data, 0, TILE_SIZE);
             int n;
             //InputStream in = incoming.getInputStream();
-            int offset = 0, length = TILE_SIZE;
+            int offset = 0, length = overallSize;
             while ((n = in.read(data, offset, length)) > 0) {
                 if (n == length) break;
                 offset += n;
