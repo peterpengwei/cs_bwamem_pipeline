@@ -41,12 +41,12 @@ public class SWUnpackObject extends UnpackObject {
 
     public void write(byte[] data) {
         if (writeFlag == false) {
-            while (pingReference != null) ;
+            //while (pingReference != null) ;
             pingReference = data;
             writeFlag = true;
         }
         else {
-            while (pongReference != null);
+            //while (pongReference != null);
             pongReference = data;
             writeFlag = false;
         }
