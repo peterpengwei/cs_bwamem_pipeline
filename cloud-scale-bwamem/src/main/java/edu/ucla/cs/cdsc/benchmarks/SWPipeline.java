@@ -24,7 +24,7 @@ public final class SWPipeline extends Pipeline {
     //public SWPipeline(int TILE_SIZE) {
     public SWPipeline() {
         //this.TILE_SIZE = TILE_SIZE;
-        this.unpackObjHash = new HashMap<>(256);
+        this.unpackObjHash = new HashMap<>();
     }
 
     //public static SWPipeline getSingleton() {
