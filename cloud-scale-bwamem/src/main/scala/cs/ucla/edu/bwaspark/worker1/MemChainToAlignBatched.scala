@@ -201,7 +201,8 @@ object MemChainToAlignBatched {
                         results: Array[ExtRet],
                         pipeline: SWPipeline,
                         threadID: Byte,
-                        resultObj: AtomicReference[Array[Byte]],
+                        resultObj: SWUnpackObject,
+                        //resultObj: AtomicReference[Array[Byte]],
                         numOfReads: Int
                        ): Unit = {
     //println("[Pipeline] start smith-waterman job processing with threadID: " + threadID)
@@ -217,7 +218,7 @@ object MemChainToAlignBatched {
 
     //println("[Pipeline] a batch is sent to the pipeline")
 
-
+    /*
     var flag = false
     var outputData: Array[Byte] = null
     while (flag == false) {
@@ -225,8 +226,9 @@ object MemChainToAlignBatched {
       if (outputData != null) flag = true
     }
     resultObj.set(null)
+    */
 
-    //val outputData = resultObj.read()
+    val outputData = resultObj.read()
 
     //val outputData: Array[Byte] = resultObj.getData.getAndSet(null)
     //println("[Pipeline] obtained a valid batch of results")
@@ -650,8 +652,8 @@ object MemChainToAlignBatched {
 
     val pipeline = SWPipeline.singleton
     val threadID = Thread.currentThread().getId.toByte
-    //val resultObj = pipeline.getResultObj(threadID)
-    val resultObj = pipeline.getResultObj(threadID).getData
+    val resultObj = pipeline.getResultObj(threadID)
+    //val resultObj = pipeline.getResultObj(threadID).getData
 
     //println("[Pipeline] acquired Thread ID = " + threadID)
 

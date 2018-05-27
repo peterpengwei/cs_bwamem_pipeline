@@ -9,6 +9,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * Created by Peter on 10/16/2017.
  */
 
+/*
 public class SWUnpackObject extends UnpackObject {
 
     public SWUnpackObject() {
@@ -25,50 +26,26 @@ public class SWUnpackObject extends UnpackObject {
 
     private AtomicReference<byte[]> data;
 }
+*/
 
 
-/*
 public class SWUnpackObject extends UnpackObject {
-    private boolean writeFlag;
-    private boolean readFlag;
-    private volatile byte[] pingReference;
-    private volatile byte[] pongReference;
 
     public SWUnpackObject() {
-        pingReference = null;
-        pongReference = null;
-        writeFlag = false;
-        readFlag = false;
+        this.data = null;
     }
 
-    public void write(byte[] data) {
-        if (writeFlag == false) {
-            //while (pingReference != null) ;
-            pingReference = data;
-            writeFlag = true;
-        }
-        else {
-            //while (pongReference != null);
-            pongReference = data;
-            writeFlag = false;
-        }
+    public void write(byte[] input) {
+        this.data = input;
     }
 
     public byte[] read() {
-        byte[] data = null;
-        if (readFlag == false) {
-            while (pingReference == null) ;
-            data = pingReference;
-            pingReference = null;
-            readFlag = true;
-        }
-        else {
-            while (pongReference == null) ;
-            data = pongReference;
-            pongReference = null;
-            readFlag = false;
-        }
-        return data;
+        while (data == null) ;
+        byte[] output = data;
+        data = null;
+        return output;
     }
+
+    private volatile byte[] data;
 }
-*/
+
