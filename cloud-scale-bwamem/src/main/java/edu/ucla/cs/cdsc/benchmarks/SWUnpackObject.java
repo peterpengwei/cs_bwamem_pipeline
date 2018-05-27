@@ -8,7 +8,7 @@ import java.util.concurrent.atomic.AtomicReference;
 /**
  * Created by Peter on 10/16/2017.
  */
-/*
+
 public class SWUnpackObject extends UnpackObject {
 
     public SWUnpackObject() {
@@ -25,7 +25,9 @@ public class SWUnpackObject extends UnpackObject {
 
     private AtomicReference<byte[]> data;
 }
-*/
+
+
+/*
 public class SWUnpackObject extends UnpackObject {
     private boolean writeFlag;
     private boolean readFlag;
@@ -69,3 +71,4 @@ public class SWUnpackObject extends UnpackObject {
         return data;
     }
 }
+*/

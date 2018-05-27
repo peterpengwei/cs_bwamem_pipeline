@@ -154,10 +154,8 @@ public final class SWPipeline extends Pipeline {
                     if (curObj.getData() == null) done = true;
                     else {
                         byte curThreadID = curObj.getData()[3];
-                        unpackObjHash.get(curThreadID).write(curObj.getData());
-                        //AtomicReference<byte[]> curReference = unpackObjHash.get(curThreadID).getData();
-                        //while (curReference.get() != null) ;
-                        //curReference.set(curObj.getData());
+                        //unpackObjHash.get(curThreadID).write(curObj.getData());
+                        unpackObjHash.get(curThreadID).getData().set(curObj.getData());
                     }
                 }
             } catch (Exception e) {
