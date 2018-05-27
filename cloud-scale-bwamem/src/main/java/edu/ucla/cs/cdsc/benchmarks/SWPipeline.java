@@ -8,7 +8,6 @@ import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.HashMap;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
 
 /**
@@ -25,6 +24,9 @@ public final class SWPipeline extends Pipeline {
     public SWPipeline() {
         //this.TILE_SIZE = TILE_SIZE;
         this.unpackObjHash = new HashMap<>();
+        for (int i=Byte.MIN_VALUE; i<=Byte.MAX_VALUE; i++) {
+            unpackObjHash.put((byte) i, new SWUnpackObject());
+        }
     }
 
     //public static SWPipeline getSingleton() {
@@ -106,10 +108,12 @@ public final class SWPipeline extends Pipeline {
 
     public SWUnpackObject getResultObj(byte threadID) {
         SWUnpackObject obj = unpackObjHash.get(threadID);
+        /*
         if (obj == null) {
             obj = new SWUnpackObject();
             unpackObjHash.put(threadID, obj);
         }
+        */
         return obj;
     }
 
