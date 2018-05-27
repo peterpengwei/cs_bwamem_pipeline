@@ -29,8 +29,8 @@ public class SWUnpackObject extends UnpackObject {
 public class SWUnpackObject extends UnpackObject {
     private boolean writeFlag;
     private boolean readFlag;
-    private byte[] pingReference;
-    private byte[] pongReference;
+    private volatile byte[] pingReference;
+    private volatile byte[] pongReference;
 
     public SWUnpackObject() {
         pingReference = null;
