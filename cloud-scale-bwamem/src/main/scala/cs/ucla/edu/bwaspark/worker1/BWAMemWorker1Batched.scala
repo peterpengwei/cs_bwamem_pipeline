@@ -106,7 +106,7 @@ object BWAMemWorker1Batched {
     if (debugLevel == 1) println("Finished the pre-processing part")
 
 
-    memChainToAlnBatched(opt, bns.l_pac, pac, lenArray, readArray, numOfReads, preResultsOfSW, chainsFilteredArray, regArrays, runOnFPGA, threshold)
+    readRetArray(0).elapsedTime = memChainToAlnBatched(opt, bns.l_pac, pac, lenArray, readArray, numOfReads, preResultsOfSW, chainsFilteredArray, regArrays, runOnFPGA, threshold)
     if (debugLevel == 1) println("Finished the batched-processing part")
     regArrays.foreach(ele => {
       if (ele != null) ele.regs = ele.regs.filter(r => (r != null))
@@ -235,6 +235,8 @@ object BWAMemWorker1Batched {
       pairEndReadArray(i).regs0 = readRetArray0(i).regs
       //pairEndReadArray(i).seq1 = readArray1(i).seq
       pairEndReadArray(i).regs1 = readRetArray1(i).regs
+
+      pairEndReadArray(i).elapsedTime = readRetArray0(i).elapsedTime + readRetArray1(i).elapsedTime
       i = i + 1
     }
 

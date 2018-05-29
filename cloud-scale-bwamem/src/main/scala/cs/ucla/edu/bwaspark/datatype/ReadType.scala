@@ -33,8 +33,10 @@ import java.io.ObjectStreamException
 class ReadType extends Serializable {
   var seq: FASTQRecord = _
   var regs: Array[MemAlnRegType] = _
+  var elapsedTime: Long = 0L
 
   private def writeObject(out: ObjectOutputStream) {
+    out.writeLong(elapsedTime)
     out.writeObject(regs)
     val writer = new SpecificDatumWriter[FASTQRecord](classOf[FASTQRecord])
     val encoder = EncoderFactory.get.binaryEncoder(out, null)
@@ -43,6 +45,7 @@ class ReadType extends Serializable {
   }
 
   private def readObject(in: ObjectInputStream) {
+    elapsedTime = in.readLong()
     regs = in.readObject.asInstanceOf[Array[MemAlnRegType]]
     val reader = new SpecificDatumReader[FASTQRecord](classOf[FASTQRecord]);
     val decoder = DecoderFactory.get.binaryDecoder(in, null);

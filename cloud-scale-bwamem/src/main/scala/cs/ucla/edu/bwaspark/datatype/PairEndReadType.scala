@@ -35,8 +35,10 @@ class PairEndReadType extends Serializable {
   var regs0: Array[MemAlnRegType] = _
   var seq1: FASTQRecord = _
   var regs1: Array[MemAlnRegType] = _
+  var elapsedTime: Long = 0L
 
   private def writeObject(out: ObjectOutputStream) {
+    out.writeLong(elapsedTime);
     out.writeObject(regs0)
     out.writeObject(regs1)
     val writer = new SpecificDatumWriter[FASTQRecord](classOf[FASTQRecord])
@@ -47,6 +49,7 @@ class PairEndReadType extends Serializable {
   }
 
   private def readObject(in: ObjectInputStream) {
+    elapsedTime = in.readLong()
     regs0 = in.readObject.asInstanceOf[Array[MemAlnRegType]]
     regs1 = in.readObject.asInstanceOf[Array[MemAlnRegType]]
     val reader = new SpecificDatumReader[FASTQRecord](classOf[FASTQRecord]);

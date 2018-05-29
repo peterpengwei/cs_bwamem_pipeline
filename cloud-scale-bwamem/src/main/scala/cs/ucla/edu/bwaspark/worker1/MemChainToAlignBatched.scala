@@ -570,8 +570,9 @@ object MemChainToAlignBatched {
                            regArrays: Array[MemAlnRegArrayType],
                            useFPGA: Boolean,
                            threshold: Int
-                          ) {
+                          ): Long = {
 
+    var elapsedTime: Long = 0L
     // The coordinate for each read: (chain No., seed No.)
     var coordinates: Array[Array[Int]] = new Array[Array[Int]](numOfReads)
     var i = 0
@@ -757,6 +758,7 @@ object MemChainToAlignBatched {
         i = i + 1
       }
 
+      var startTime: Long = System.nanoTime()
       if (useFPGA == true) {
         if (taskIdx >= threshold) {
           //val ret = runOnFPGA(taskIdx, numOfReads, fpgaExtTasks, fpgaExtResults)
@@ -778,6 +780,7 @@ object MemChainToAlignBatched {
           i = i + 1
         }
       }
+      elapsedTime = elapsedTime + (System.nanoTime() - startTime)
 
       i = 0;
       while (i < taskIdx) {
@@ -816,6 +819,8 @@ object MemChainToAlignBatched {
       start = increRes._2
       end = increRes._3
     }
+
+    elapsedTime
   }
 
   /**
