@@ -70,6 +70,7 @@ object BWAMemWorker1Batched {
     var i = 0;
     while (i < numOfReads) {
       readRetArray(i) = new ReadType
+      readRetArray(i).elapsedTime = 0L
       //readRetArray(i).seq = seqArray(i)
       i = i + 1
     }

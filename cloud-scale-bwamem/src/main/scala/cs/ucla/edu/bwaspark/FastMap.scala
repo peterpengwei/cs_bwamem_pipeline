@@ -250,13 +250,7 @@ object FastMap {
     }
 
     reads = pairEndSeedingRDD.mapPartitions(it2ArrayIt_W1).flatMap(s => s)
-    println ("[DEMO] Processed " + reads.count + " pairs of reads")
-
-    def calculateElapsedTime(a: PairEndReadType, b:PairEndReadType): PairEndReadType = {
-      var ret: PairEndReadType = new PairEndReadType
-      ret.elapsedTime = a.elapsedTime + b.elapsedTime
-      return ret
-    }
+    //println ("[DEMO] Processed " + reads.count + " pairs of reads")
 
     val overallTime: Long = reads.map(x => x.elapsedTime).reduce((a, b) => a + b)
 
@@ -265,7 +259,7 @@ object FastMap {
     worker1Time += (worker1EndTime - startTime)
 
     //println("[DEMO] Execution Time: " + worker1Time)
-    println("[DEMO] Execution TIme: " + overallTime.toDouble / 1e6 + " ms")
+    println("[DEMO] Execution TIme: " + overallTime.toDouble / 1e9 + " seconds")
     sc.stop
   }
 

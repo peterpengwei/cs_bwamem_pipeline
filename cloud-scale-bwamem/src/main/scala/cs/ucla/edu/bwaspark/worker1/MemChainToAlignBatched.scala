@@ -758,12 +758,14 @@ object MemChainToAlignBatched {
         i = i + 1
       }
 
-      var startTime: Long = System.nanoTime()
+
       if (useFPGA == true) {
         if (taskIdx >= threshold) {
+          var startTime: Long = System.nanoTime()
           //val ret = runOnFPGA(taskIdx, numOfReads, fpgaExtTasks, fpgaExtResults)
           //val ret = runOnFPGAJNI(taskIdx, fpgaExtTasks, fpgaExtResults)
           val ret = runOnFPGAPipeline(taskIdx, fpgaExtTasks, fpgaExtResults, pipeline, threadID, resultObj, numOfReads)
+          elapsedTime = elapsedTime + (System.nanoTime() - startTime)
         }
         else {
           i = 0;
@@ -774,13 +776,15 @@ object MemChainToAlignBatched {
         }
       }
       else {
+        var startTime: Long = System.nanoTime()
         i = 0;
         while (i < taskIdx) {
           fpgaExtResults(i) = extension(fpgaExtTasks(i))
           i = i + 1
         }
+        if (taskIdx >= threshold) elapsedTime = elapsedTime + (System.nanoTime() - startTime)
       }
-      elapsedTime = elapsedTime + (System.nanoTime() - startTime)
+
 
       i = 0;
       while (i < taskIdx) {
