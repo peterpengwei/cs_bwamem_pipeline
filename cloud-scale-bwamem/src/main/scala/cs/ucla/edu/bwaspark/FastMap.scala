@@ -258,7 +258,7 @@ object FastMap {
       return ret
     }
 
-    val overallTime: Long = reads.reduce(calculateElapsedTime).elapsedTime
+    val overallTime: Long = reads.map(x => x.elapsedTime).reduce((a, b) => a + b)
 
     // *****   PROFILING    *******
     val worker1EndTime = System.currentTimeMillis
