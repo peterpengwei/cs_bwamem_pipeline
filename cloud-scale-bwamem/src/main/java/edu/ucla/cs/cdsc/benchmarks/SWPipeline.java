@@ -20,10 +20,10 @@ public final class SWPipeline extends Pipeline {
     public static final SWPipeline singleton = new SWPipeline();
     private HashMap<Byte, SWUnpackObject> unpackObjHash;
     //private HashMap<Long, Byte> IDHash;
-    private AtomicInteger IDGenerator = new AtomicInteger(0);
+    //private AtomicInteger IDGenerator = new AtomicInteger(0);
     //private int TILE_SIZE;
 
-    private volatile int numOfPendingJobs;
+    //private volatile int numOfPendingJobs;
 
     //public SWPipeline(int TILE_SIZE) {
     public SWPipeline() {
@@ -33,7 +33,7 @@ public final class SWPipeline extends Pipeline {
             unpackObjHash.put((byte) i, new SWUnpackObject());
         }
         //this.IDHash = new HashMap<>();
-        numOfPendingJobs = 0;
+        //numOfPendingJobs = 0;
     }
 
     //public static SWPipeline getSingleton() {
@@ -124,10 +124,10 @@ public final class SWPipeline extends Pipeline {
         return obj;
     }
 
-    public byte getByteID() {
-        byte byteID = (byte) IDGenerator.getAndIncrement();
-        return byteID;
-    }
+    //public byte getByteID() {
+    //    byte byteID = (byte) IDGenerator.getAndIncrement();
+    //    return byteID;
+    //}
 
     @Override
     public Object execute(Object input) {
@@ -145,8 +145,8 @@ public final class SWPipeline extends Pipeline {
                         done = true;
                     } else {
                         //logger.info("[Pipeline] the size of the batch is " + obj.getData().length);
-                        while (numOfPendingJobs >= 16) ;
-                        numOfPendingJobs++;
+                        //while (numOfPendingJobs >= 16) ;
+                        //numOfPendingJobs++;
                         send(obj, socket);
                     }
                 }
@@ -169,7 +169,7 @@ public final class SWPipeline extends Pipeline {
                 while (!done) {
                     //logger.info("numJobs = " + numJobs.get() + ", numPendingJobs = " + numPendingJobs.get());
                     SWRecvObject curObj = (SWRecvObject) receive(in);
-                    numOfPendingJobs--;
+                    //numOfPendingJobs--;
                     if (curObj.getData() == null) done = true;
                     else {
                         byte curThreadID = curObj.getData()[3];

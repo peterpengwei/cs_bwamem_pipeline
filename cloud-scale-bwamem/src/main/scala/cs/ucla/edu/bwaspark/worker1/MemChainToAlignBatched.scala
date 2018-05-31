@@ -691,7 +691,7 @@ object MemChainToAlignBatched {
     var taskIdx = 0
 
     val pipeline = SWPipeline.singleton
-    val threadID = pipeline.getByteID()
+    val threadID = Thread.currentThread().getId.toByte
     val resultObj = pipeline.getResultObj(threadID)
     //val resultObj = pipeline.getResultObj(threadID).getData
 
