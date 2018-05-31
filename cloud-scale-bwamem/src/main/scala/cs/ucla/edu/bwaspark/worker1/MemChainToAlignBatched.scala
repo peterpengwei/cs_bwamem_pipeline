@@ -250,6 +250,10 @@ object MemChainToAlignBatched {
       }
     }
 
+    if (taskNum * 20 != outputData.length) {
+      println("[ERROR] Received data mismatch! Expected: " + (taskNum*20) + ", Actual: " + outputData.length)
+    }
+
     //println("[Pipeline] a batch is sent to the pipeline")
 
     /*
@@ -687,7 +691,7 @@ object MemChainToAlignBatched {
     var taskIdx = 0
 
     val pipeline = SWPipeline.singleton
-    val threadID = Thread.currentThread().getId.toByte
+    val threadID = pipeline.getByteID(Thread.currentThread().getId)
     val resultObj = pipeline.getResultObj(threadID)
     //val resultObj = pipeline.getResultObj(threadID).getData
 

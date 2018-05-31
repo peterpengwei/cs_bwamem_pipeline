@@ -8,6 +8,7 @@ import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.HashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
 /**
@@ -18,6 +19,8 @@ public final class SWPipeline extends Pipeline {
     //private static final SWPipeline singleton = new SWPipeline(1 << 21);
     public static final SWPipeline singleton = new SWPipeline();
     private HashMap<Byte, SWUnpackObject> unpackObjHash;
+    private HashMap<Long, Byte> IDHash;
+    private AtomicInteger IDGenerator = new AtomicInteger(0);
     //private int TILE_SIZE;
 
     private volatile int numOfPendingJobs;
@@ -26,9 +29,10 @@ public final class SWPipeline extends Pipeline {
     public SWPipeline() {
         //this.TILE_SIZE = TILE_SIZE;
         this.unpackObjHash = new HashMap<>();
-        for (int i=Byte.MIN_VALUE; i<=Byte.MAX_VALUE; i++) {
+        for (int i=0; i<=Byte.MAX_VALUE; i++) {
             unpackObjHash.put((byte) i, new SWUnpackObject());
         }
+        this.IDHash = new HashMap<>();
         numOfPendingJobs = 0;
     }
 
@@ -118,6 +122,15 @@ public final class SWPipeline extends Pipeline {
         }
         */
         return obj;
+    }
+
+    public byte getByteID(long longID) {
+        Byte byteID = IDHash.get(longID);
+        if (byteID == null) {
+            byteID = (byte) IDGenerator.getAndIncrement();
+            IDHash.put(longID, byteID);
+        }
+        return byteID;
     }
 
     @Override
