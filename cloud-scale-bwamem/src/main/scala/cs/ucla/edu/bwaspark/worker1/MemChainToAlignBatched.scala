@@ -209,12 +209,6 @@ object MemChainToAlignBatched {
 
     val inputData = pipelinePack(taskNum, tasks, threadID)
 
-    val actualTaskNum = ByteBuffer.wrap(inputData.getData, 8, 4).order(ByteOrder.LITTLE_ENDIAN).getInt
-
-    if (actualTaskNum != taskNum) {
-      println("[ERROR] Send task number mismatch! Expected: " + taskNum + ", Actual: " + actualTaskNum)
-    }
-
     //println("[Pipline] input data with length: " + inputData.getData().length + " and jobs " + taskNum)
 
     val sendQueue = pipeline.getSendQueue()
@@ -697,7 +691,7 @@ object MemChainToAlignBatched {
     var taskIdx = 0
 
     val pipeline = SWPipeline.singleton
-    val threadID = pipeline.getByteID(Thread.currentThread().getId)
+    val threadID = pipeline.getByteID()
     val resultObj = pipeline.getResultObj(threadID)
     //val resultObj = pipeline.getResultObj(threadID).getData
 

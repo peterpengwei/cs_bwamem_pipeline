@@ -19,7 +19,7 @@ public final class SWPipeline extends Pipeline {
     //private static final SWPipeline singleton = new SWPipeline(1 << 21);
     public static final SWPipeline singleton = new SWPipeline();
     private HashMap<Byte, SWUnpackObject> unpackObjHash;
-    private HashMap<Long, Byte> IDHash;
+    //private HashMap<Long, Byte> IDHash;
     private AtomicInteger IDGenerator = new AtomicInteger(0);
     //private int TILE_SIZE;
 
@@ -29,10 +29,10 @@ public final class SWPipeline extends Pipeline {
     public SWPipeline() {
         //this.TILE_SIZE = TILE_SIZE;
         this.unpackObjHash = new HashMap<>();
-        for (int i=0; i<=Byte.MAX_VALUE; i++) {
+        for (int i=Byte.MIN_VALUE; i<=Byte.MAX_VALUE; i++) {
             unpackObjHash.put((byte) i, new SWUnpackObject());
         }
-        this.IDHash = new HashMap<>();
+        //this.IDHash = new HashMap<>();
         numOfPendingJobs = 0;
     }
 
@@ -124,12 +124,8 @@ public final class SWPipeline extends Pipeline {
         return obj;
     }
 
-    public byte getByteID(long longID) {
-        Byte byteID = IDHash.get(longID);
-        if (byteID == null) {
-            byteID = (byte) IDGenerator.getAndIncrement();
-            IDHash.put(longID, byteID);
-        }
+    public byte getByteID() {
+        byte byteID = (byte) IDGenerator.getAndIncrement();
         return byteID;
     }
 
