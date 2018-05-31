@@ -32,27 +32,26 @@ public class SWUnpackObject extends UnpackObject {
 public class SWUnpackObject extends UnpackObject {
 
     public SWUnpackObject() {
-        this.data = null;
+        this.data = new AtomicReference<>(null);
     }
 
     public void write(byte[] input) {
-        this.data = input;
+        while (data.get() != null) ;
+        data.set(input);
     }
 
     public byte[] read() {
-        while (data == null) ;
-        byte[] output = data;
-        data = null;
+        byte[] output;
+        while ((output = data.get()) == null) ;
+        data.set(null);
         return output;
     }
 
     public byte[] poll() {
-        if (data == null) return null;
-        byte[] output = data;
-        data = null;
+        byte[] output = data.getAndSet(null);
         return output;
     }
 
-    private volatile byte[] data;
+    private AtomicReference<byte[]> data;
 }
 

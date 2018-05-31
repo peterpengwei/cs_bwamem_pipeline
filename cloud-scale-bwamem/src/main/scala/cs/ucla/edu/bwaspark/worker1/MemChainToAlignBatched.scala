@@ -219,6 +219,7 @@ object MemChainToAlignBatched {
     var sendData: Array[Byte] = null
     var sendObj: SWSendObject = null
     var recvData: Array[Byte] = null
+    var outputData: Array[Byte] = null
 
     while (recvIndex < 64) {
       // packing
@@ -234,6 +235,7 @@ object MemChainToAlignBatched {
         if (isSucceeded == true) {
           sendIndex = sendIndex + 1
           if (sendIndex < 64) pack_flag = true
+          else pack_flag = false
         }
         else {
           pack_flag = false
@@ -244,6 +246,7 @@ object MemChainToAlignBatched {
       recvData = resultObj.poll()
       if (recvData != null) {
         recvIndex = recvIndex + 1
+        outputData = recvData
       }
     }
 
@@ -260,7 +263,7 @@ object MemChainToAlignBatched {
     */
 
     //val outputData = resultObj.read()
-    val outputData = recvData
+    //val outputData = recvData
 
     //val outputData: Array[Byte] = resultObj.getData.getAndSet(null)
     //println("[Pipeline] obtained a valid batch of results")
