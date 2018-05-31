@@ -20,6 +20,8 @@ public final class SWPipeline extends Pipeline {
     private HashMap<Byte, SWUnpackObject> unpackObjHash;
     //private int TILE_SIZE;
 
+    private volatile int numOfPendingJobs;
+
     //public SWPipeline(int TILE_SIZE) {
     public SWPipeline() {
         //this.TILE_SIZE = TILE_SIZE;
@@ -27,6 +29,7 @@ public final class SWPipeline extends Pipeline {
         for (int i=Byte.MIN_VALUE; i<=Byte.MAX_VALUE; i++) {
             unpackObjHash.put((byte) i, new SWUnpackObject());
         }
+        numOfPendingJobs = 0;
     }
 
     //public static SWPipeline getSingleton() {
@@ -133,6 +136,8 @@ public final class SWPipeline extends Pipeline {
                         done = true;
                     } else {
                         //logger.info("[Pipeline] the size of the batch is " + obj.getData().length);
+                        while (numOfPendingJobs >= 32) ;
+                        numOfPendingJobs++;
                         send(obj, socket);
                     }
                 }
@@ -155,6 +160,7 @@ public final class SWPipeline extends Pipeline {
                 while (!done) {
                     //logger.info("numJobs = " + numJobs.get() + ", numPendingJobs = " + numPendingJobs.get());
                     SWRecvObject curObj = (SWRecvObject) receive(in);
+                    numOfPendingJobs--;
                     if (curObj.getData() == null) done = true;
                     else {
                         byte curThreadID = curObj.getData()[3];
