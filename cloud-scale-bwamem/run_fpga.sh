@@ -13,4 +13,4 @@ SPARK_DRIVER_MEMORY=32g \
 cs-bwamem -bfn 1 -bPSW 1 -sbatch 10 -bPSWJNI 1 -jniPath /curr/ytchen0323/shared_lib/jniNative.so \
 -oChoice 2 -oPath hdfs://ubuntu.pengwei.m6.cdsc-local:9000/user/pengwei/null_fpga -localRef 1 -R "@RG	ID:HCC1954	LB:HCC1954	SM:HCC1954" -isSWExtBatched 1 -bSWExtSize $4 -FPGAAccSWExt $2 -FPGASWExtThreshold $5 \
 -jniSWExtendLibPath "/curr/genomics_spark/shared_lib/jniSWExtend.so" 1 /curr/pengwei/archive/genomics/ReferenceMetadata/human_g1k_v37.fasta \
-hdfs://ubuntu.pengwei.m6.cdsc-local:9000/user/pengwei/demo_input/HCC1954_8
+hdfs://ubuntu.pengwei.m6.cdsc-local:9000/user/pengwei/demo_input/HCC1954_4
