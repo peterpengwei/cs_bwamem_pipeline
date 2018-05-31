@@ -46,6 +46,13 @@ public class SWUnpackObject extends UnpackObject {
         return output;
     }
 
+    public byte[] poll() {
+        if (data == null) return null;
+        byte[] output = data;
+        data = null;
+        return output;
+    }
+
     private volatile byte[] data;
 }
 

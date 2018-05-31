@@ -213,7 +213,38 @@ object MemChainToAlignBatched {
 
     val sendQueue = pipeline.getSendQueue()
 
-    while (sendQueue.offer(inputData) == false) {
+    var recvIndex = 0
+    var sendIndex = 0
+    var pack_flag = true
+    var sendData: Array[Byte] = null
+    var sendObj: SWSendObject = null
+    var recvData: Array[Byte] = null
+
+    while (recvIndex < 64) {
+      // packing
+      if (pack_flag) {
+        sendData = new Array[Byte](inputData.getData.length)
+        Array.copy(inputData.getData, 0, sendData, 0, inputData.getData.length)
+        sendObj = new SWSendObject(sendData)
+      }
+
+      // sending
+      if (sendIndex < 64) {
+        var isSucceeded = sendQueue.offer(sendObj)
+        if (isSucceeded == true) {
+          sendIndex = sendIndex + 1
+          if (sendIndex < 64) pack_flag = true
+        }
+        else {
+          pack_flag = false
+        }
+      }
+
+      // receiving
+      recvData = resultObj.poll()
+      if (recvData != null) {
+        recvIndex = recvIndex + 1
+      }
     }
 
     //println("[Pipeline] a batch is sent to the pipeline")
@@ -228,7 +259,8 @@ object MemChainToAlignBatched {
     resultObj.set(null)
     */
 
-    val outputData = resultObj.read()
+    //val outputData = resultObj.read()
+    val outputData = recvData
 
     //val outputData: Array[Byte] = resultObj.getData.getAndSet(null)
     //println("[Pipeline] obtained a valid batch of results")
