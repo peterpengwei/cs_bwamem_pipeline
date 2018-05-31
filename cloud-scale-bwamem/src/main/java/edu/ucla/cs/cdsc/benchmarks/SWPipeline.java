@@ -136,7 +136,7 @@ public final class SWPipeline extends Pipeline {
                         done = true;
                     } else {
                         //logger.info("[Pipeline] the size of the batch is " + obj.getData().length);
-                        while (numOfPendingJobs >= 32) ;
+                        while (numOfPendingJobs >= 16) ;
                         numOfPendingJobs++;
                         send(obj, socket);
                     }
