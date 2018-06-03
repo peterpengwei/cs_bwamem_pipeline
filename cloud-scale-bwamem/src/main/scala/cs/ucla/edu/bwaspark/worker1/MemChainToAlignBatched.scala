@@ -25,6 +25,7 @@ import cs.ucla.edu.bwaspark.datatype._
 import cs.ucla.edu.bwaspark.util.BNTSeqUtil._
 import cs.ucla.edu.bwaspark.util.SWUtil._
 import edu.ucla.cs.cdsc.benchmarks.SWUnpackObject
+import org.jctools.queues.SpscLinkedQueue
 
 import scala.collection.mutable.MutableList
 
@@ -201,11 +202,11 @@ object MemChainToAlignBatched {
                         results: Array[ExtRet],
                         pipeline: SWPipeline,
                         threadID: Byte,
-                        resultObj: SWUnpackObject,
+                        //resultObj: SWUnpackObject,
                         //resultObj: AtomicReference[Array[Byte]],
+                        outputQueue: SpscLinkedQueue[Array[Byte]],
                         numOfReads: Int
                        ): Unit = {
-    //println("[Pipeline] start smith-waterman job processing with threadID: " + threadID)
 
     val inputData = pipelinePack(taskNum, tasks, threadID)
 
@@ -243,7 +244,8 @@ object MemChainToAlignBatched {
       }
 
       // receiving
-      recvData = resultObj.poll()
+      //recvData = resultObj.poll()
+      recvData = outputQueue.poll()
       if (recvData != null) {
         recvIndex = recvIndex + 1
         outputData = recvData
@@ -688,7 +690,8 @@ object MemChainToAlignBatched {
 
     val pipeline = SWPipeline.singleton
     val threadID = Thread.currentThread().getId.toByte
-    val resultObj = pipeline.getResultObj(threadID)
+    val outputQueue = pipeline.getOutputQueue(threadID)
+    //val resultObj = pipeline.getResultObj(threadID)
     //val resultObj = pipeline.getResultObj(threadID).getData
 
     //println("[Pipeline] acquired Thread ID = " + threadID)
@@ -799,7 +802,8 @@ object MemChainToAlignBatched {
           var startTime: Long = System.nanoTime()
           //val ret = runOnFPGA(taskIdx, numOfReads, fpgaExtTasks, fpgaExtResults)
           //val ret = runOnFPGAJNI(taskIdx, fpgaExtTasks, fpgaExtResults)
-          val ret = runOnFPGAPipeline(taskIdx, fpgaExtTasks, fpgaExtResults, pipeline, threadID, resultObj, numOfReads)
+          //val ret = runOnFPGAPipeline(taskIdx, fpgaExtTasks, fpgaExtResults, pipeline, threadID, resultObj, numOfReads)
+          val ret = runOnFPGAPipeline(taskIdx, fpgaExtTasks, fpgaExtResults, pipeline, threadID, outputQueue, numOfReads)
           elapsedTime = elapsedTime + (System.nanoTime() - startTime)
         }
         else {

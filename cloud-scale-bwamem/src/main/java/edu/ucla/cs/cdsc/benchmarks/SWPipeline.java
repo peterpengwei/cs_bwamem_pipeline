@@ -1,6 +1,7 @@
 package edu.ucla.cs.cdsc.benchmarks;
 
 import edu.ucla.cs.cdsc.pipeline.*;
+import org.jctools.queues.SpscLinkedQueue;
 
 import java.io.InputStream;
 import java.net.ServerSocket;
@@ -16,11 +17,9 @@ import java.util.logging.Logger;
  */
 public final class SWPipeline extends Pipeline {
     private static final Logger logger = Logger.getLogger(SWPipeline.class.getName());
-    //private static final SWPipeline singleton = new SWPipeline(1 << 21);
     public static final SWPipeline singleton = new SWPipeline();
-    private HashMap<Byte, SWUnpackObject> unpackObjHash;
-    //private HashMap<Long, Byte> IDHash;
-    //private AtomicInteger IDGenerator = new AtomicInteger(0);
+    //private HashMap<Byte, SWUnpackObject> unpackObjHash;
+    private HashMap<Byte, SpscLinkedQueue<byte[]>> IDToOutputQueueMap;
     //private int TILE_SIZE;
 
     private volatile int numOfPendingJobs;
@@ -28,17 +27,13 @@ public final class SWPipeline extends Pipeline {
     //public SWPipeline(int TILE_SIZE) {
     public SWPipeline() {
         //this.TILE_SIZE = TILE_SIZE;
-        this.unpackObjHash = new HashMap<>();
-        for (int i=Byte.MIN_VALUE; i<=Byte.MAX_VALUE; i++) {
-            unpackObjHash.put((byte) i, new SWUnpackObject());
-        }
-        //this.IDHash = new HashMap<>();
+        //this.unpackObjHash = new HashMap<>();
+        //for (int i=Byte.MIN_VALUE; i<=Byte.MAX_VALUE; i++) {
+        //    unpackObjHash.put((byte) i, new SWUnpackObject());
+        //}
+        IDToOutputQueueMap = new HashMap<>();
         numOfPendingJobs = 0;
     }
-
-    //public static SWPipeline getSingleton() {
-    //    return singleton;
-    //}
 
     @Override
     public SendObject pack(PackObject obj) {
@@ -113,21 +108,21 @@ public final class SWPipeline extends Pipeline {
         return null;
     }
 
+    /*
     public SWUnpackObject getResultObj(byte threadID) {
         SWUnpackObject obj = unpackObjHash.get(threadID);
-        /*
-        if (obj == null) {
-            obj = new SWUnpackObject();
-            unpackObjHash.put(threadID, obj);
-        }
-        */
         return obj;
     }
+    */
 
-    //public byte getByteID() {
-    //    byte byteID = (byte) IDGenerator.getAndIncrement();
-    //    return byteID;
-    //}
+    public SpscLinkedQueue<byte[]> getOutputQueue(byte threadID) {
+        SpscLinkedQueue<byte[]> outputQueue = IDToOutputQueueMap.get(threadID);
+        if (outputQueue == null) {
+            outputQueue = new SpscLinkedQueue<>();
+            IDToOutputQueueMap.put(threadID, outputQueue);
+        }
+        return outputQueue;
+    }
 
     @Override
     public Object execute(Object input) {
@@ -173,7 +168,9 @@ public final class SWPipeline extends Pipeline {
                     if (curObj.getData() == null) done = true;
                     else {
                         byte curThreadID = curObj.getData()[3];
-                        unpackObjHash.get(curThreadID).write(curObj.getData());
+                        SpscLinkedQueue<byte[]> outputQueue = IDToOutputQueueMap.get(curThreadID);
+                        while (outputQueue.offer(curObj.getData()) == false) ;
+                        //unpackObjHash.get(curThreadID).write(curObj.getData());
                         //unpackObjHash.get(curThreadID).getData().set(curObj.getData());
                     }
                 }
