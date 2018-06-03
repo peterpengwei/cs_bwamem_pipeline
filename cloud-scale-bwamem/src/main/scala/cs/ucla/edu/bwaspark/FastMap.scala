@@ -188,10 +188,6 @@ object FastMap {
 
     // Used to avoid time consuming adamRDD.count (numProcessed += adamRDD.count)
     // Assume the number of read in one batch is the same (This is determined when uploading FASTQ to HDFS)
-    //   val fastqRDDLoaderTmp = new FASTQRDDLoader(sc, fastqHDFSInputPath, fastqInputFolderNum)
-    //   val rddTmp = fastqRDDLoaderTmp.PairEndRDDLoadOneBatch(0, batchFolderNum)
-    //   val batchedReadNum = rddTmp.count
-    //   rddTmp.unpersist(true)
 
     // *****   PROFILING    *******
     var worker1Time: Long = 0
@@ -206,60 +202,72 @@ object FastMap {
     var isSAMWriteDone: Boolean = true  // a done signal for writing SAM file
     //var isFinalIteration: Boolean = false
       
-    var pes: Array[MemPeStat] = new Array[MemPeStat](4)
-    var j = 0
-    while(j < 4) {
-      pes(j) = new MemPeStat
-      j += 1
-    }
+      var pes: Array[MemPeStat] = new Array[MemPeStat](4)
+      var j = 0
+      while(j < 4) {
+        pes(j) = new MemPeStat
+        j += 1
+      }
 
-    // for demo only
-    println("[DEMO] Loading data from " + fastqHDFSInputPath)
-    val seeding_path = fastqHDFSInputPath
-    val pairEndSeedingRDD = sc.textFile(seeding_path)
+      // loading reads
+      println("Load FASTQ files")
+      val pairEndFASTQRDDLoader = new FASTQRDDLoader(sc, fastqHDFSInputPath, fastqInputFolderNum)
+      val restFolderNum = fastqInputFolderNum - i
+      var pairEndFASTQRDD: RDD[PairEndFASTQRecord] = null
+      if(restFolderNum >= batchFolderNum) {
+        pairEndFASTQRDD = pairEndFASTQRDDLoader.PairEndRDDLoadOneBatch(i, batchFolderNum)
+        i += batchFolderNum
+      }
+      else {
+        pairEndFASTQRDD = pairEndFASTQRDDLoader.PairEndRDDLoadOneBatch(i, restFolderNum)
+        i += restFolderNum
+        //isFinalIteration = true
+      }
 
-    // Worker1 (Map step)
-    // *****   PROFILING    *******
-    val startTime = System.currentTimeMillis
+      // Worker1 (Map step)
+      // *****   PROFILING    *******
+      val startTime = System.currentTimeMillis
 
-    println("[DEMO] Start execution...") 
-    var reads: RDD[PairEndReadType] = null
+      println("[DEMO] Start execution...") 
+      var reads: RDD[PairEndReadType] = null
 
-    def it2ArrayIt_W1(iter: Iterator[String]): Iterator[Array[PairEndReadType]] = {
-      val batchedDegree = swExtBatchSize
-      var counter = 0
-      var ret: Vector[Array[PairEndReadType]] = scala.collection.immutable.Vector.empty
-      var end = new Array[String](batchedDegree)
-      
-      while(iter.hasNext) {
-        end(counter) = iter.next
-        counter += 1
-        if(counter == batchedDegree) {
-          ret = ret :+ pairEndBwaMemWorker1Batched(bwaMemOptGlobal.value, bwaIdxGlobal.value.value.bwt, bwaIdxGlobal.value.value.bns, bwaIdxGlobal.value.value.pac, 
-                                             null, end, batchedDegree, isFPGAAccSWExtend, fpgaSWExtThreshold, jniSWExtendLibPath)
-          counter = 0
+        def it2ArrayIt_W1(iter: Iterator[PairEndFASTQRecord]): Iterator[Array[PairEndReadType]] = {
+          val batchedDegree = swExtBatchSize
+          var counter = 0
+          var ret: Vector[Array[PairEndReadType]] = scala.collection.immutable.Vector.empty
+          var end1 = new Array[FASTQRecord](batchedDegree)
+          var end2 = new Array[FASTQRecord](batchedDegree)
+          
+          while(iter.hasNext) {
+            val pairEnd = iter.next
+            end1(counter) = pairEnd.seq0
+            end2(counter) = pairEnd.seq1
+            counter += 1
+            if(counter == batchedDegree) {
+              ret = ret :+ pairEndBwaMemWorker1Batched(bwaMemOptGlobal.value, bwaIdxGlobal.value.value.bwt, bwaIdxGlobal.value.value.bns, bwaIdxGlobal.value.value.pac, 
+                                                 null, end1, end2, batchedDegree, isFPGAAccSWExtend, fpgaSWExtThreshold, jniSWExtendLibPath)
+              counter = 0
+            }
+          }
+
+          if(counter != 0) {
+            ret = ret :+ pairEndBwaMemWorker1Batched(bwaMemOptGlobal.value, bwaIdxGlobal.value.value.bwt, bwaIdxGlobal.value.value.bns, bwaIdxGlobal.value.value.pac, 
+                                               null, end1, end2, counter, isFPGAAccSWExtend, fpgaSWExtThreshold, jniSWExtendLibPath)
+          }
+
+          ret.toArray.iterator
         }
-      }
 
-      if(counter != 0) {
-        ret = ret :+ pairEndBwaMemWorker1Batched(bwaMemOptGlobal.value, bwaIdxGlobal.value.value.bwt, bwaIdxGlobal.value.value.bns, bwaIdxGlobal.value.value.pac, 
-                                           null, end, counter, isFPGAAccSWExtend, fpgaSWExtThreshold, jniSWExtendLibPath)
-      }
+        reads = pairEndFASTQRDD.mapPartitions(it2ArrayIt_W1).flatMap(s => s)
 
-      ret.toArray.iterator
-    }
 
-    reads = pairEndSeedingRDD.mapPartitions(it2ArrayIt_W1).flatMap(s => s)
-    //println ("[DEMO] Processed " + reads.count + " pairs of reads")
+      val overallTime: Long = reads.map(x => x.elapsedTime).reduce((a, b) => a + b)
 
-    val overallTime: Long = reads.map(x => x.elapsedTime).reduce((a, b) => a + b)
+      // *****   PROFILING    *******
+      val worker1EndTime = System.currentTimeMillis
+      worker1Time += (worker1EndTime - startTime)
 
-    // *****   PROFILING    *******
-    val worker1EndTime = System.currentTimeMillis
-    worker1Time += (worker1EndTime - startTime)
-
-    //println("[DEMO] Execution Time: " + worker1Time)
-    println("[DEMO] Execution TIme: " + overallTime.toDouble / 1e9 + " seconds")
+      println("[DEMO] Execution TIme: " + overallTime.toDouble / 1e9 + " seconds")
     sc.stop
   }
 

@@ -19,11 +19,9 @@
 package cs.ucla.edu.bwaspark.worker1
 
 import cs.ucla.edu.bwaspark.datatype._
-
 import scala.collection.mutable.MutableList
 import java.util.TreeSet
 import java.util.Comparator
-
 import cs.ucla.edu.bwaspark.worker1.MemChain._
 import cs.ucla.edu.bwaspark.worker1.MemChainFilter._
 import cs.ucla.edu.bwaspark.worker1.MemChainToAlignBatched._
@@ -38,73 +36,86 @@ import edu.ucla.cs.cdsc.benchmarks.SWPipeline
 //2)using SW algorithm to extend each chain to all possible aligns
 object BWAMemWorker1Batched {
   SWPipeline.singleton.execute(null)
-
   /**
-    * Perform BWAMEM worker1 function for single-end alignment
-    * Alignment is processed in a batched way
+    *  Perform BWAMEM worker1 function for single-end alignment
+    *  Alignment is processed in a batched way
     *
-    * @param opt        the MemOptType object, BWAMEM options
-    * @param bwt        BWT and Suffix Array
-    * @param bns        .ann, .amb files
-    * @param pac        .pac file (PAC array: uint8_t)
-    * @param pes        pes array for worker2
-    * @param seqArray   a batch of reads
-    * @param numOfReads #reads in the batch
-    *
-    *                   Return: a batch of reads with alignments
+    *  @param opt the MemOptType object, BWAMEM options
+    *  @param bwt BWT and Suffix Array
+    *  @param bns .ann, .amb files
+    *  @param pac .pac file (PAC array: uint8_t)
+    *  @param pes pes array for worker2
+    *  @param seqArray a batch of reads
+    *  @param numOfReads #reads in the batch
+    *  
+    *  Return: a batch of reads with alignments 
     */
   def bwaMemWorker1Batched(opt: MemOptType, //BWA MEM options
                            bwt: BWTType, //BWT and Suffix Array
                            bns: BNTSeqType, //.ann, .amb files
                            pac: Array[Byte], //.pac file uint8_t
                            pes: Array[MemPeStat], //pes array
-                           readArray: Array[Array[Byte]],
-                           lenArray: Array[Int],
-                           chainsFilteredArray: Array[Array[MemChainType]],
+                           seqArray: Array[FASTQRecord], //the batched reads
                            numOfReads: Int, //the number of the batched reads
-                           runOnFPGA: Boolean, //if run on FPGA
-                           threshold: Int //the batch threshold to run on FPGA
-                          ): Array[ReadType] = { //all possible alignments for all the reads
+			   runOnFPGA: Boolean, //if run on FPGA
+			   threshold: Int //the batch threshold to run on FPGA
+                           ): Array[ReadType] = { //all possible alignments for all the reads  
 
-    val readRetArray = new Array[ReadType](numOfReads)
-    var i = 0;
-    while (i < numOfReads) {
-      readRetArray(i) = new ReadType
-      readRetArray(i).elapsedTime = 0L
-      //readRetArray(i).seq = seqArray(i)
-      i = i + 1
-    }
-
-    val preResultsOfSW = new Array[Array[SWPreResultType]](numOfReads)
-    val numOfSeedsArray = new Array[Int](numOfReads)
-    val regArrays = new Array[MemAlnRegArrayType](numOfReads)
-    i = 0;
-    while (i < numOfReads) {
-      if (chainsFilteredArray(i) == null) {
-        preResultsOfSW(i) = null
-        numOfSeedsArray(i) = 0
-        regArrays(i) = null
+      val readArray = new Array[Array[Byte]](numOfReads)
+      val lenArray = new Array[Int](numOfReads)
+      var i = 0
+      while (i < numOfReads) {
+        readArray(i) = (new String(seqArray(i).getSeq.array)).toCharArray.map(locus => locusEncode(locus))
+        lenArray(i) = seqArray(i).getSeqLength.toInt
+        i = i + 1
       }
-      else {
-        preResultsOfSW(i) = new Array[SWPreResultType](chainsFilteredArray(i).length)
-        var j = 0;
-        while (j < chainsFilteredArray(i).length) {
-          preResultsOfSW(i)(j) = calPreResultsOfSW(opt, bns.l_pac, pac, lenArray(i), readArray(i), chainsFilteredArray(i)(j))
-          j = j + 1
+
+      //first & second step: chaining and filtering
+      val chainsFilteredArray = new Array[Array[MemChainType]](numOfReads)
+      i = 0;
+      while (i < numOfReads) {
+        chainsFilteredArray(i) = memChainFilter(opt, generateChains(opt, bwt, bns.l_pac, lenArray(i), readArray(i))) 
+        i = i+1;
+      }
+
+      val readRetArray = new Array[ReadType](numOfReads)
+      i = 0;
+      while (i < numOfReads) {
+        readRetArray(i) = new ReadType
+        readRetArray(i).seq = seqArray(i)
+        i = i+1
+      }
+
+      val preResultsOfSW = new Array[Array[SWPreResultType]](numOfReads)
+      val numOfSeedsArray = new Array[Int](numOfReads)
+      val regArrays = new Array[MemAlnRegArrayType](numOfReads)
+      i = 0;
+      while (i < numOfReads) {
+        if (chainsFilteredArray(i) == null) {
+          preResultsOfSW(i) = null
+          numOfSeedsArray(i) = 0
+          regArrays(i) = null
         }
-        numOfSeedsArray(i) = 0
-        chainsFilteredArray(i).foreach(chain => {
-          numOfSeedsArray(i) += chain.seedsRefArray.length
-        })
-        if (debugLevel == 1) println("Finished the calculation of pre-results of Smith-Waterman")
-        if (debugLevel == 1) println("The number of reads in this pack is: " + numOfReads)
-        regArrays(i) = new MemAlnRegArrayType
-        regArrays(i).maxLength = numOfSeedsArray(i)
-        regArrays(i).regs = new Array[MemAlnRegType](numOfSeedsArray(i))
+        else {
+          preResultsOfSW(i) = new Array[SWPreResultType](chainsFilteredArray(i).length)
+          var j = 0;
+          while (j < chainsFilteredArray(i).length) {
+            preResultsOfSW(i)(j)= calPreResultsOfSW(opt, bns.l_pac, pac, lenArray(i), readArray(i), chainsFilteredArray(i)(j))
+      	    j = j+1
+      	  }
+          numOfSeedsArray(i) = 0
+          chainsFilteredArray(i).foreach(chain => {
+            numOfSeedsArray(i) += chain.seeds.length
+            } )
+          if (debugLevel == 1) println("Finished the calculation of pre-results of Smith-Waterman")
+          if (debugLevel == 1) println("The number of reads in this pack is: " + numOfReads)
+          regArrays(i) = new MemAlnRegArrayType
+          regArrays(i).maxLength = numOfSeedsArray(i)
+          regArrays(i).regs = new Array[MemAlnRegType](numOfSeedsArray(i))
+        }
+        i = i+1;
       }
-      i = i + 1;
-    }
-    if (debugLevel == 1) println("Finished the pre-processing part")
+      if (debugLevel == 1) println("Finished the pre-processing part")
 
 
     readRetArray(0).elapsedTime = memChainToAlnBatched(opt, bns.l_pac, pac, lenArray, readArray, numOfReads, preResultsOfSW, chainsFilteredArray, regArrays, runOnFPGA, threshold)
@@ -125,119 +136,39 @@ object BWAMemWorker1Batched {
   }
 
   /**
-    * Perform BWAMEM worker1 function for pair-end alignment
+    *  Perform BWAMEM worker1 function for pair-end alignment
     *
-    * @param opt      the MemOptType object, BWAMEM options
-    * @param bwt      BWT and Suffix Array
-    * @param bns      .ann, .amb files
-    * @param pac      .pac file (PAC array: uint8_t)
-    * @param pes      pes array for worker2
-    * @param pairSeqs a read with both ends
-    *
-    *                 Return: a read with alignments on both ends
+    *  @param opt the MemOptType object, BWAMEM options
+    *  @param bwt BWT and Suffix Array
+    *  @param bns .ann, .amb files
+    *  @param pac .pac file (PAC array: uint8_t)
+    *  @param pes pes array for worker2
+    *  @param pairSeqs a read with both ends
+    *  
+    *  Return: a read with alignments on both ends
     */
   def pairEndBwaMemWorker1Batched(opt: MemOptType, //BWA MEM options
-                                  bwt: BWTType, //BWT and Suffix Array
-                                  bns: BNTSeqType, //.ann, .amb files
-                                  pac: Array[Byte], //.pac file uint8_t
-                                  pes: Array[MemPeStat], //pes array
-                                  seqArray: Array[String], //the pairs of seqs
-                                  numOfReads: Int, //the number of reads in each batch
-                                  runOnFPGA: Boolean, //if run on FPGA
-                                  threshold: Int, //the batch threshold to run on FPGA
-                                  jniSWExtendLibPath: String = null // SWExtend Library Path
-                                 ): Array[PairEndReadType] = { //all possible alignment
-    if (jniSWExtendLibPath != null && runOnFPGA)
+                           bwt: BWTType, //BWT and Suffix Array
+                           bns: BNTSeqType, //.ann, .amb files
+                           pac: Array[Byte], //.pac file uint8_t
+                           pes: Array[MemPeStat], //pes array
+			   seqArray0: Array[FASTQRecord], //the first batch
+			   seqArray1: Array[FASTQRecord], //the second batch
+			   numOfReads: Int, //the number of reads in each batch
+			   runOnFPGA: Boolean, //if run on FPGA
+			   threshold: Int, //the batch threshold to run on FPGA
+                           jniSWExtendLibPath: String = null // SWExtend Library Path
+                          ): Array[PairEndReadType] = { //all possible alignment  
+    if(jniSWExtendLibPath != null && runOnFPGA)
       System.load(jniSWExtendLibPath)
-
-    val readArray0 = new Array[Array[Byte]](numOfReads)
-    val lenArray0 = new Array[Int](numOfReads)
-    val chainsFilteredArray0 = new Array[Array[MemChainType]](numOfReads)
-    val readArray1 = new Array[Array[Byte]](numOfReads)
-    val lenArray1 = new Array[Int](numOfReads)
-    val chainsFilteredArray1 = new Array[Array[MemChainType]](numOfReads)
-
-    def parseStr(str: String) = {
-      val tokens = str.split(' ')
-      // first number: number of chains for the first read
-      var idx = 0
-      var numChains0 = tokens(idx).toInt
-      idx += 1
-      var chains0: Array[MemChainType] = null
-      if (numChains0 > 0) chains0 = new Array[MemChainType](numChains0)
-      // traverse each chain, get seeds
-      for (i <- 0 until numChains0) {
-        // the first number is pos
-        chains0(i) = new MemChainType(tokens(idx).toLong, null)
-        idx += 1
-        // then the number of seeds
-        var numSeeds = tokens(idx).toInt
-        idx += 1
-        chains0(i).seedsRefArray = new Array[MemSeedType](numSeeds)
-        for (j <- 0 until numSeeds) {
-          chains0(i).seedsRefArray(j) = new MemSeedType(tokens(idx).toLong, tokens(idx + 1).toInt, tokens(idx + 2).toInt)
-          idx += 3
-        }
-      }
-      var seqLen0 = tokens(idx).toInt
-      idx += 1
-      var read0: Array[Byte] = tokens(idx).getBytes
-      idx += 1
-      assert(read0.size == seqLen0)
-
-      var numChains1 = tokens(idx).toInt
-      idx += 1
-      var chains1: Array[MemChainType] = null
-      if (numChains1 > 0) chains1 = new Array[MemChainType](numChains1)
-      // traverse each chain, get seeds
-      for (i <- 0 until numChains1) {
-        // the first number is pos
-        chains1(i) = new MemChainType(tokens(idx).toLong, null)
-        idx += 1
-        // then the number of seeds
-        var numSeeds = tokens(idx).toInt
-        idx += 1
-        chains1(i).seedsRefArray = new Array[MemSeedType](numSeeds)
-        for (j <- 0 until numSeeds) {
-          chains1(i).seedsRefArray(j) = new MemSeedType(tokens(idx).toLong, tokens(idx + 1).toInt, tokens(idx + 2).toInt)
-          idx += 3
-        }
-      }
-      var seqLen1 = tokens(idx).toInt
-      idx += 1
-      var read1: Array[Byte] = tokens(idx).getBytes
-      idx += 1
-      assert(read1.size == seqLen1)
-
-      assert(idx == tokens.size)
-
-      (read0, seqLen0, chains0, read1, seqLen1, chains1)
-    }
-
+ 
+    val readArray0 = bwaMemWorker1Batched(opt, bwt, bns, pac, pes, seqArray0, numOfReads, runOnFPGA, threshold)
+    val readArray1 = bwaMemWorker1Batched(opt, bwt, bns, pac, pes, seqArray1, numOfReads, runOnFPGA, threshold)
+    var pairEndReadArray = new Array[PairEndReadType](numOfReads)
     var i = 0
     while (i < numOfReads) {
-      var ret = parseStr(seqArray(i))
-      readArray0(i) = ret._1
-      lenArray0(i) = ret._2
-      chainsFilteredArray0(i) = ret._3
-      readArray1(i) = ret._4
-      lenArray1(i) = ret._5
-      chainsFilteredArray1(i) = ret._6
-      i = i + 1
-    }
-
-    val readRetArray0 = bwaMemWorker1Batched(opt, bwt, bns, pac, pes, readArray0, lenArray0, chainsFilteredArray0, numOfReads, runOnFPGA, threshold)
-    val readRetArray1 = bwaMemWorker1Batched(opt, bwt, bns, pac, pes, readArray1, lenArray1, chainsFilteredArray1, numOfReads, runOnFPGA, threshold)
-    var pairEndReadArray = new Array[PairEndReadType](numOfReads)
-    i = 0
-    while (i < numOfReads) {
       pairEndReadArray(i) = new PairEndReadType
-      //pairEndReadArray(i).seq0 = readArray0(i).seq
-      pairEndReadArray(i).regs0 = readRetArray0(i).regs
-      //pairEndReadArray(i).seq1 = readArray1(i).seq
-      pairEndReadArray(i).regs1 = readRetArray1(i).regs
-
-      pairEndReadArray(i).elapsedTime = readRetArray0(i).elapsedTime + readRetArray1(i).elapsedTime
+      pairEndReadArray(i).elapsedTime = readArray0(i).elapsedTime + readArray1(i).elapsedTime
       i = i + 1
     }
 

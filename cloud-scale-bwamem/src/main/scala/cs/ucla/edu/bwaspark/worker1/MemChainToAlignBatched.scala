@@ -221,7 +221,7 @@ object MemChainToAlignBatched {
     var recvData: Array[Byte] = null
     var outputData: Array[Byte] = null
 
-    while (recvIndex < 64) {
+    while (recvIndex < 4) {
       // packing
       if (pack_flag) {
         sendData = new Array[Byte](inputData.getData.length)
@@ -230,11 +230,11 @@ object MemChainToAlignBatched {
       }
 
       // sending
-      if (sendIndex < 64) {
+      if (sendIndex < 4) {
         var isSucceeded = sendQueue.offer(sendObj)
         if (isSucceeded == true) {
           sendIndex = sendIndex + 1
-          if (sendIndex < 64) pack_flag = true
+          if (sendIndex < 4) pack_flag = true
           else pack_flag = false
         }
         else {
@@ -248,10 +248,6 @@ object MemChainToAlignBatched {
         recvIndex = recvIndex + 1
         outputData = recvData
       }
-    }
-
-    if (taskNum * 20 != outputData.length) {
-      println("[ERROR] Received data mismatch! Expected: " + (taskNum*20) + ", Actual: " + outputData.length)
     }
 
     //println("[Pipeline] a batch is sent to the pipeline")
